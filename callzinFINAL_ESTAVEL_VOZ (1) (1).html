@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Callzin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+
+  @keyframes gridmove { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(93, 224, 230, 0.25), 0 0 60px rgba(124, 92, 255, 0.12); }
+    50% { box-shadow: 0 0 32px rgba(93, 224, 230, 0.4), 0 0 90px rgba(124, 92, 255, 0.22); }
+  }
+
+  html, body { margin: 0; min-height: 100vh; background: #06070a; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    color: #eaf0f6;
+    background-image:
+      linear-gradient(rgba(93,224,230,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(93,224,230,0.06) 1px, transparent 1px),
+      radial-gradient(circle at 50% 0%, rgba(124,92,255,0.16), transparent 55%),
+      radial-gradient(circle at 90% 90%, rgba(93,224,230,0.10), transparent 45%);
+    background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%;
+    animation: gridmove 6s linear infinite;
+  }
+
+  /* ---------- shell ---------- */
+  #app { display: flex; min-height: 100vh; align-items: stretch; }
+
+  #sidebar {
+    width: 264px; flex: 0 0 264px;
+    margin: 20px; padding: 20px 16px;
+    background: rgba(17, 20, 28, 0.72);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px; border: 1px solid rgba(93, 224, 230, 0.18);
+    display: flex; flex-direction: column; gap: 20px;
+    position: relative; overflow: hidden; height: fit-content;
+  }
+  #sidebar::before {
+    content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, #5de0e6, transparent);
+  }
+
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: .2px; }
+  .brand .mark {
+    width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
+    background: linear-gradient(135deg, #5de0e6, #7c5cff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transform: rotate(-6deg); box-shadow: 0 0 16px rgba(124,92,255,0.4);
+  }
+
+  .profile-card {
+    background: #0a0c11; border: 1px solid rgba(93,224,230,0.22); border-radius: 14px;
+    padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+  }
+  .avatar-picker {
+    width: 36px; height: 36px; border-radius: 10px; flex: 0 0 auto;
+    background: rgba(93,224,230,0.12); border: 1px solid rgba(93,224,230,0.32);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    cursor: pointer; transition: all .2s ease;
+  }
+  .avatar-picker:hover { background: rgba(93,224,230,0.25); box-shadow: 0 0 12px rgba(93,224,230,0.35); }
+  #profileName {
+    background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 600;
+    width: 100%; min-width: 0; outline: none;
+  }
+  #profileName::placeholder { color: #566; }
+
+  .navlist { display: flex; flex-direction: column; gap: 4px; }
+  .navitem {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px;
+    border: none; background: transparent; color: #8891a3; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-align: left; position: relative; overflow: hidden; transition: all .2s ease;
+    font-family: inherit;
+  }
+  .navitem:hover { background: rgba(255,255,255,0.05); color: #eaf0f6; }
+  .navitem.active { background: #171b26; color: #fff; }
+  .navitem.active::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 56px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(124,92,255,0.35));
+  }
+  .navitem .badge {
+    margin-left: auto; font-size: 11px; background: rgba(62,230,107,0.18); color: #3ee66b;
+    border: 1px solid rgba(62,230,107,0.4); padding: 1px 7px; border-radius: 20px; font-weight: 700;
+  }
+
+  .myid-box {
+    background: #0a0c11; border: 1px solid rgba(93,224,230,0.25); border-radius: 10px;
+    padding: 10px 12px; font-family: 'Consolas', monospace; font-size: 13px; color: #5de0e6;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto;
+  }
+  .myid-box span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .myid-box button {
+    background: rgba(93,224,230,0.12); border: 1px solid rgba(93,224,230,0.35); color: #5de0e6;
+    padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 700;
+    white-space: nowrap; transition: all .2s ease;
+  }
+  .myid-box button:hover { background: rgba(93,224,230,0.25); box-shadow: 0 0 12px rgba(93,224,230,0.4); }
+
+  #mainarea { flex: 1; min-width: 0; padding: 32px; display: flex; flex-direction: column; }
+  .view { display: none; flex: 1; min-height: 0; flex-direction: column; }
+  .view.active { display: flex; }
+
+  /* ---------- card (home / settings / ring) ---------- */
+  .card {
+    max-width: 440px; padding: 32px; background: rgba(17, 20, 28, 0.72);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px; border: 1px solid rgba(93, 224, 230, 0.18);
+    animation: glow 4s ease-in-out infinite; position: relative;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, #5de0e6, transparent);
+  }
+  .card h1 {
+    margin-top: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #5de0e6, #7c5cff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .card p { color: #8891a3; font-size: 14px; line-height: 1.6; }
+
+  label { font-size: 12px; color: #6b7488; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  input[type=text], select {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+    background: #0a0c11; color: #fff; font-size: 15px; margin: 8px 0 20px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; font-family: inherit;
+  }
+  input[type=text]:focus, select:focus {
+    outline: none; border-color: #5de0e6; box-shadow: 0 0 12px rgba(93,224,230,0.3);
+  }
+
+  button.primary {
+    width: 100%; padding: 14px; border-radius: 10px; border: none;
+    background: linear-gradient(90deg, #5de0e6, #7c5cff); color: #06070a; font-size: 15px;
+    font-weight: 700; letter-spacing: 0.3px; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 0 20px rgba(124,92,255,0.35);
+  }
+  button.primary:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(124,92,255,0.55); }
+  button.primary:active { transform: translateY(0); }
+
+  #status { font-size: 13px; color: #8891a3; margin-top: 4px; min-height: 18px; line-height: 1.5; }
+  .hint { font-size: 12px; color: #566; margin-top: -10px; }
+
+  /* ---------- device test / level meter / misc controls ---------- */
+  .row-actions { display: flex; gap: 10px; margin: 8px 0 20px; }
+  .row-actions button.secondary, button.secondary {
+    flex: 1; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13px;
+    font-weight: 700; font-family: inherit; background: #171b26; color: #eaf0f6;
+    border: 1px solid rgba(93,224,230,0.28); transition: all .2s ease;
+  }
+  button.secondary:hover { background: #1f2432; border-color: rgba(93,224,230,0.5); }
+  button.secondary:disabled { opacity: .5; cursor: default; }
+  .meter {
+    height: 8px; border-radius: 6px; background: #0a0c11; border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden; margin: 6px 0 18px;
+  }
+  .meter-fill {
+    height: 100%; width: 0%; border-radius: 6px;
+    background: linear-gradient(90deg, #3ee66b, #5de0e6 65%, #ffcd3c 88%, #ff5c5c);
+    transition: width .05s linear;
+  }
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 18px;
+    background: #0a0c11; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px;
+  }
+  .check-row input[type=checkbox] { margin-top: 3px; accent-color: #5de0e6; width: 15px; height: 15px; flex: 0 0 auto; }
+  .check-row .check-txt { font-size: 13px; color: #b6bdc9; line-height: 1.5; }
+  .check-row .check-txt b { color: #eaf0f6; }
+  .invite-row { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .invite-row input[type=text] { flex: 1; margin: 0; }
+  .invite-row button { width: auto; padding: 0 16px; white-space: nowrap; }
+  .conn-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #8891a3;
+    margin-left: 10px; font-weight: 600; text-transform: none; letter-spacing: 0;
+  }
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #566; }
+  .conn-dot.ok { background: #3ee66b; box-shadow: 0 0 8px #3ee66b; }
+  .conn-dot.bad { background: #ff5c5c; box-shadow: 0 0 8px #ff5c5c; }
+
+  /* ---------- room ---------- */
+  .room-header {
+    font-size: 13px; color: #8891a3; text-transform: uppercase; letter-spacing: 1px;
+    font-weight: 700; margin: 0 0 14px;
+  }
+  #videos {
+    flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-auto-rows: minmax(160px, 1fr); gap: 10px; overflow: auto; align-content: stretch;
+  }
+  #videos.has-spotlight { display: flex; flex-direction: column; }
+  #videos.has-spotlight .vwrap.spotlight { flex: 1; min-height: 0; }
+  .thumbrow {
+    flex: 0 0 120px; display: flex; gap: 10px; overflow-x: auto; padding-top: 10px;
+  }
+  .thumbrow .vwrap.thumb { flex: 0 0 170px; }
+  @media (max-width: 700px) {
+    #videos { grid-template-columns: 1fr; }
+    .thumbrow .vwrap.thumb { flex: 0 0 130px; }
+  }
+
+  .vwrap {
+    position: relative; background: #000; border-radius: 14px; overflow: hidden;
+    border: 1px solid rgba(93,224,230,0.2); box-shadow: 0 0 24px rgba(93,224,230,0.08) inset;
+    min-height: 100px; transition: border-color .12s ease, box-shadow .12s ease;
+  }
+  .vwrap.speaking {
+    border-color: #3ee66b;
+    box-shadow: 0 0 0 2px rgba(62,230,107,0.55), 0 0 22px rgba(62,230,107,0.4) inset;
+  }
+  .vwrap:fullscreen { border-radius: 0; background: #000; }
+  .vwrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .avatar-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 8px; background: radial-gradient(circle at 50% 40%, #171b26, #06070a);
+  }
+  .avatar-circle {
+    width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 34px; box-shadow: 0 0 30px rgba(93,224,230,0.25);
+    transition: box-shadow .12s ease;
+    border: 2px solid rgba(255,255,255,0.15); background: #171b26;
+  }
+  .vwrap.speaking .avatar-circle { box-shadow: 0 0 0 3px rgba(62,230,107,0.6), 0 0 26px rgba(62,230,107,0.5); }
+  .avatar-label { font-size: 11px; color: #8891a3; letter-spacing: 0.3px; }
+  .vwrap .tag {
+    position: absolute; bottom: 10px; left: 12px; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.3px; color: #5de0e6; background: rgba(6,7,10,0.65); backdrop-filter: blur(6px);
+    border: 1px solid rgba(93,224,230,0.3); padding: 4px 10px; border-radius: 8px; z-index: 2;
+    max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .vwrap .tag::before {
+    content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: #3ee66b; margin-right: 6px; animation: pulse 1.6s ease-in-out infinite;
+  }
+  .remote-audio { display: none; }
+  .fs-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 2; width: 30px; height: 30px;
+    border-radius: 8px; border: 1px solid rgba(93,224,230,0.3); background: rgba(6,7,10,0.65);
+    backdrop-filter: blur(6px); color: #5de0e6; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fs-btn:hover { background: rgba(93,224,230,0.2); }
+
+  #bar {
+    display: flex; justify-content: center; gap: 16px; padding: 18px; margin-top: 10px;
+    background: rgba(17,20,28,0.85); backdrop-filter: blur(16px); border-radius: 16px;
+    border: 1px solid rgba(93,224,230,0.15);
+  }
+  #bar button {
+    width: 54px; height: 54px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
+    background: #1a1e28; color: #eaf0f6; font-size: 20px; cursor: pointer; transition: all 0.2s ease;
+  }
+  #bar button:hover { background: #232838; transform: translateY(-2px); }
+  #bar button.off { background: rgba(216,60,60,0.2); border-color: #d83c3c; }
+  #bar button.deafened { background: rgba(255,205,60,0.18); border-color: #ffcd3c; color: #ffcd3c; }
+  #bar button.sharing { background: linear-gradient(90deg, #5de0e6, #7c5cff); color: #06070a; border-color: transparent; }
+  #bar button#hangup { background: rgba(216,60,60,0.15); border-color: rgba(216,60,60,0.5); }
+  #bar button#hangup:hover { background: #d83c3c; box-shadow: 0 0 20px rgba(216,60,60,0.5); }
+
+  /* ---------- ring overlay ---------- */
+  .ring-overlay {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(6,7,10,0.75); backdrop-filter: blur(4px); z-index: 50;
+  }
+  .ring-card { text-align: center; }
+  .ring-card h1 { animation: pulse 1.6s ease-in-out infinite; }
+  .ring-card .actions { display: flex; gap: 12px; margin-top: 20px; }
+  .ring-card button { flex: 1; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: transform 0.15s ease; }
+  .ring-card button:hover { transform: translateY(-1px); }
+  #acceptBtn { background: linear-gradient(90deg, #3ee66b, #23a55a); color: #06070a; box-shadow: 0 0 20px rgba(62,230,107,0.35); }
+  #declineBtn { background: rgba(216,60,60,0.15); color: #ff6b6b; border: 1px solid rgba(216,60,60,0.5) !important; }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 900px) {
+    #app { flex-direction: column; }
+    #sidebar {
+      width: auto; margin: 12px; padding: 12px 14px; border-radius: 18px;
+      flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+    .brand span.wordmark { display: none; }
+    .profile-card { flex: 1 1 auto; min-width: 120px; }
+    .navlist { flex-direction: row; gap: 4px; }
+    .navitem span { display: none; }
+    .navitem { padding: 10px; justify-content: center; }
+    .myid-box { flex: 1 1 100%; order: 5; }
+    #mainarea { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand"><span class="mark">📡</span><span class="wordmark">Callzin</span></div>
+
+    <div class="profile-card">
+      <div class="avatar-picker" id="avatarPicker" onclick="cycleAvatar()" title="trocar avatar"><span id="profileAvatar">🙂</span></div>
+      <input id="profileName" type="text" maxlength="18" placeholder="seu nome">
+    </div>
+
+    <nav class="navlist">
+      <button class="navitem active" data-view="home" onclick="setView('home')">🏠 <span>Início</span></button>
+      <button class="navitem" data-view="room" onclick="setView('room')">👥 <span>Sala</span></button>
+      <button class="navitem" data-view="settings" onclick="setView('settings')">⚙️ <span>Configurações</span></button>
+    </nav>
+
+    <div class="myid-box">
+      <span id="sidebarMyid">gerando...</span>
+      <button onclick="copyId()">copiar</button>
+    </div>
+  </aside>
+
+  <main id="mainarea">
+
+    <section id="view-home" class="view active">
+      <div class="card">
+        <h1>Callzin 📞</h1>
+        <p>Oi, <span id="homeAvatar">🙂</span> <b id="homeName">...</b>. Entre em uma sala com quantas pessoas quiser, igual no Discord: crie uma sala e mande seu ID, ou cole o ID de alguém que já está numa sala.</p>
+
+        <label>ID da sala (deixe em branco pra criar uma nova)</label>
+        <input type="text" id="roomId" placeholder="cole o ID de alguém que já está na sala">
+        <button class="primary" onclick="enterRoom()">Entrar / criar sala</button>
+        <div id="status"></div>
+
+        <div id="inviteBox" style="display:none; margin-top:22px;">
+          <label>Link de convite da sua sala</label>
+          <div class="invite-row">
+            <input type="text" id="inviteLink" readonly>
+            <button class="secondary" onclick="copyInviteLink()">copiar link</button>
+          </div>
+          <p class="hint" style="margin-top:8px;">Manda esse link pra quem quiser entrar — abre e já cai direto na sua sala.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-room" class="view">
+      <div class="room-header" id="roomCount">Sala • 1 pessoa
+        <span class="conn-badge" id="connBadge"><span class="conn-dot" id="connDot"></span><span id="connText">conectando...</span></span>
+      </div>
+      <div id="videos"></div>
+      <div id="bar">
+        <button id="micBtn" onclick="toggleMic()" title="ligar/desligar microfone">🎤</button>
+        <button id="deafenBtn" onclick="toggleDeafen()" title="ensurdecer (não ouvir ninguém)">🔇</button>
+        <button id="shareBtn" onclick="toggleScreen()" title="transmitir tela">🖥️</button>
+        <button id="hangup" onclick="leaveRoom()" title="sair da sala">✖</button>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="card" style="max-width:480px;">
+        <h1>Configurações</h1>
+        <p>Sua escolha de dispositivos e seu perfil ficam salvos neste navegador.</p>
+
+        <div class="row-actions">
+          <button class="secondary" id="activateDevicesBtn" onclick="activateDevices()">🔓 ativar microfone e ver dispositivos</button>
+        </div>
+        <p class="hint" id="deviceStatusHint" style="margin-top:-4px; margin-bottom:18px;">Se os nomes dos dispositivos abaixo aparecerem como "Microfone 1", clique no botão acima pra liberar a permissão e ver os nomes reais (ex.: "WO Mic Device", "Steam Streaming Microphone" etc.)</p>
+
+        <label>Dispositivo de entrada (microfone)</label>
+        <select id="micSelect" onchange="onMicChange()"></select>
+        <div class="meter"><div class="meter-fill" id="micMeterFill"></div></div>
+        <p class="hint" style="margin-top:-14px; margin-bottom:20px;">A barra verde acima se mexe quando seu microfone capta som — é o jeito mais fácil de saber se sua voz está saindo. Pode trocar o microfone mesmo durante a chamada.</p>
+
+        <label>Volume de entrada</label>
+        <input type="range" id="inputVolume" min="0" max="200" value="100" oninput="onInputVolumeChange()">
+        <p class="hint" style="margin-top:-14px; margin-bottom:20px;">Ganho aplicado à sua voz antes de enviar para a chamada.</p>
+
+        <label>Dispositivo de saída (alto-falante)</label>
+        <select id="speakerSelect" onchange="onSpeakerChange()"></select>
+        <div class="row-actions" style="margin-top:8px;">
+          <button class="secondary" onclick="testSpeaker()">🔊 testar alto-falante</button>
+        </div>
+        <p class="hint" id="speakerHint">Pode trocar o alto-falante mesmo durante a chamada.</p>
+
+        <label>Volume de saída</label>
+        <input type="range" id="outputVolume" min="0" max="200" value="100" oninput="onOutputVolumeChange()">
+        <p class="hint" style="margin-top:-14px; margin-bottom:20px;">Controla o volume de tudo que você ouve na chamada.</p>
+
+        <label>Qualidade da transmissão de tela</label>
+        <select id="screenQualitySelect" onchange="onScreenQualityChange()">
+          <option value="fhd60">Full HD 60fps (1920×1080)</option>
+          <option value="fhd30">Full HD 30fps (1920×1080)</option>
+          <option value="hd60">HD 60fps (1280×720)</option>
+          <option value="hd30">HD 30fps (1280×720)</option>
+          <option value="sd30">SD 30fps (854×480) — mais leve</option>
+        </select>
+        <p class="hint" style="margin-top:-14px; margin-bottom:8px;">Qualidades maiores usam mais internet dos dois lados. Se a transmissão travar, tente uma opção menor.</p>
+
+        <div class="check-row">
+          <input type="checkbox" id="systemAudioCheck" checked onchange="onSystemAudioCheckChange()">
+          <span class="check-txt">
+            <b>Incluir áudio do sistema ao compartilhar tela</b><br>
+            Se você escolher compartilhar <b>uma aba específica</b> (ex.: uma música/vídeo), o áudio dela vai junto sem problema. Mas se escolher <b>a tela inteira ou uma janela</b>, o Windows também captura o som da própria chamada e isso cria eco (a pessoa ouve a própria voz voltando). Por isso, quando detectamos esse caso, o Callzin desliga sozinho o áudio do sistema pra evitar o eco.
+          </span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="ring-overlay" id="ringOverlay">
+  <div class="card ring-card">
+    <h1>📞 Chamada recebida</h1>
+    <p>Alguém quer te chamar pra uma sala no Callzin.</p>
+    <div class="actions">
+      <button id="acceptBtn" onclick="acceptIncoming()">Aceitar</button>
+      <button id="declineBtn" onclick="declineIncoming()">Recusar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const AVATARS = ['🐱','🐶','🦊','🐼','🐵','🦁','🐸','🤖','👾','🦉','🐧','🦄'];
+
+let profile = JSON.parse(localStorage.getItem('callzin_profile') || 'null') || {};
+if (!profile.name) profile.name = 'Visitante' + Math.floor(Math.random() * 900 + 100);
+if (!profile.avatar) profile.avatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+if (profile.inputVolume === undefined) profile.inputVolume = 100;
+if (profile.outputVolume === undefined) profile.outputVolume = 100;
+if (!profile.screenQuality) profile.screenQuality = 'fhd60';
+if (profile.systemAudio === undefined) profile.systemAudio = true;
+function saveProfile() { localStorage.setItem('callzin_profile', JSON.stringify(profile)); }
+
+const SCREEN_QUALITY_PRESETS = {
+  fhd60: { width: 1920, height: 1080, frameRate: 60, bitrate: 8000000 },
+  fhd30: { width: 1920, height: 1080, frameRate: 30, bitrate: 5000000 },
+  hd60:  { width: 1280, height: 720,  frameRate: 60, bitrate: 4000000 },
+  hd30:  { width: 1280, height: 720,  frameRate: 30, bitrate: 2500000 },
+  sd30:  { width: 854,  height: 480,  frameRate: 30, bitrate: 1200000 },
+};
+
+let peer, myId = null, localStream, blankVideoTrack, screenShareAudioTrack = null;
+let micOn = true, mySharing = false, inRoom = false, pendingCall = null, deafened = false;
+let rawMicStream = null; // faixa crua do microfone atual, pra poder parar antes de trocar de dispositivo
+let autoJoinRoomId = null;
+
+const participants = new Map(); // id -> { call, dataConn, name, avatar, sharing }
+const tiles = new Map();        // id -> { wrap, video, overlay, circle, label, tag, isLocal }
+
+/* ---------- áudio: barramento único (mic + som da tela) + volume de saída ---------- */
+// Em vez de criar/trocar faixas de áudio (o que exigiria renegociar a conexão WebRTC
+// no meio da chamada, algo frágil com o PeerJS), mantemos UMA única faixa de saída
+// (sentAudioTrack) desde o início da chamada. Trocar de microfone ou ligar/desligar
+// o som da tela apenas reconecta as fontes dentro do grafo de áudio — a faixa
+// enviada pra rede nunca muda, então nada precisa ser renegociado.
+let audioCtx = null;
+let mixDestNode = null;   // destino único cujo track é o que de fato sai pra rede
+let sentAudioTrack = null;
+let micGainNode = null, micSourceNode = null;
+let screenGainNode = null, screenSourceNode = null;
+let micGainValue = profile.inputVolume / 100;
+let outputVolumeValue = profile.outputVolume / 100;
+
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+function ensureMixGraph() {
+  ensureAudioCtx();
+  if (!mixDestNode) {
+    mixDestNode = audioCtx.createMediaStreamDestination();
+    sentAudioTrack = mixDestNode.stream.getAudioTracks()[0];
+  }
+}
+function connectMicToMix(rawTrack) {
+  ensureMixGraph();
+  if (micSourceNode) { try { micSourceNode.disconnect(); } catch (e) {} }
+  micSourceNode = audioCtx.createMediaStreamSource(new MediaStream([rawTrack]));
+  if (!micGainNode) {
+    micGainNode = audioCtx.createGain();
+    micGainNode.gain.value = micOn ? micGainValue : 0;
+    micGainNode.connect(mixDestNode);
+  }
+  micSourceNode.connect(micGainNode);
+  attachSpeakingAnalyser('local', micSourceNode, true);
+}
+
+/* ---------- indicador de fala (borda verde) + medidor de nível do mic ---------- */
+// Cada participante (incluindo você) ganha um AnalyserNode ligado à sua fonte de
+// áudio. Um único loop de animação lê o volume de todos e liga/desliga a classe
+// "speaking" no card correspondente — é assim que dá pra confirmar visualmente
+// que sua voz está saindo (a borda do seu próprio card fica verde ao falar).
+const speakingAnalysers = new Map(); // id -> { analyser, data, isLocalMic }
+function attachSpeakingAnalyser(id, sourceNode, isLocalMic) {
+  ensureAudioCtx();
+  const prev = speakingAnalysers.get(id);
+  if (prev && prev.sourceNode) { try { prev.sourceNode.disconnect(prev.analyser); } catch (e) {} }
+  const analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 512;
+  analyser.smoothingTimeConstant = 0.6;
+  sourceNode.connect(analyser); // não conecta ao destino: só serve pra medir, não toca duas vezes
+  speakingAnalysers.set(id, { analyser, sourceNode, data: new Uint8Array(analyser.frequencyBinCount), isLocalMic: !!isLocalMic, speaking: false });
+}
+function detachSpeakingAnalyser(id) {
+  const s = speakingAnalysers.get(id);
+  if (s) { try { s.sourceNode.disconnect(s.analyser); } catch (e) {} speakingAnalysers.delete(id); }
+}
+function levelOf(entry) {
+  entry.analyser.getByteTimeDomainData(entry.data);
+  let sum = 0;
+  for (let i = 0; i < entry.data.length; i++) { const v = (entry.data[i] - 128) / 128; sum += v * v; }
+  return Math.sqrt(sum / entry.data.length); // RMS aproximado, 0..1
+}
+const SPEAKING_THRESHOLD = 0.035;
+function speakingLoop() {
+  speakingAnalysers.forEach((entry, id) => {
+    const level = levelOf(entry);
+    if (id === 'local' && entry.isLocalMic) {
+      const pct = Math.min(100, Math.round((level / 0.5) * 100));
+      const fill = document.getElementById('micMeterFill');
+      if (fill) fill.style.width = pct + '%';
+    }
+    const shouldSpeak = level > SPEAKING_THRESHOLD && (id !== 'local' || micOn);
+    if (shouldSpeak !== entry.speaking) {
+      entry.speaking = shouldSpeak;
+      const t = tiles.get(id);
+      if (t) t.wrap.classList.toggle('speaking', shouldSpeak);
+    }
+  });
+  requestAnimationFrame(speakingLoop);
+}
+requestAnimationFrame(speakingLoop);
+function connectScreenAudioToMix(rawTrack) {
+  ensureMixGraph();
+  screenSourceNode = audioCtx.createMediaStreamSource(new MediaStream([rawTrack]));
+  if (!screenGainNode) { screenGainNode = audioCtx.createGain(); screenGainNode.gain.value = 1; screenGainNode.connect(mixDestNode); }
+  screenSourceNode.connect(screenGainNode);
+}
+function disconnectScreenAudioFromMix() {
+  if (screenSourceNode) { try { screenSourceNode.disconnect(); } catch (e) {} screenSourceNode = null; }
+}
+function onInputVolumeChange() {
+  const val = Number(document.getElementById('inputVolume').value);
+  micGainValue = val / 100;
+  if (micGainNode && micOn) micGainNode.gain.value = micGainValue;
+  profile.inputVolume = val; saveProfile();
+}
+function onOutputVolumeChange() {
+  const val = Number(document.getElementById('outputVolume').value);
+  outputVolumeValue = val / 100;
+  profile.outputVolume = val; saveProfile();
+  applyOutputVolumeAll();
+}
+function applyOutputVolumeAll() {
+  tiles.forEach(t => {
+    if (t.isLocal) return;
+    t.video.volume = 0;
+    if (t.audio) t.audio.volume = outputVolumeValue;
+  });
+}
+// O vídeo remoto fica mudo e um elemento <audio> separado reproduz somente a voz.
+// Isso evita que o navegador bloqueie/controle o áudio junto com a transmissão visual.
+async function applyOutputToVideo(video, isLocal) {
+  if (isLocal) return;
+  video.muted = true;
+  video.volume = 0;
+  if (profile.speakerId && typeof video.setSinkId === 'function') {
+    try { await video.setSinkId(profile.speakerId); } catch (e) {}
+  }
+}
+async function applyOutputToAudio(audio, isLocal) {
+  if (isLocal || !audio) return;
+  audio.muted = deafened;
+  audio.volume = outputVolumeValue;
+  if (profile.speakerId && typeof audio.setSinkId === 'function') {
+    try { await audio.setSinkId(profile.speakerId); }
+    catch (e) { statusMsg('Não consegui usar o alto-falante selecionado: ' + (e.message || e.name)); }
+  }
+}
+function resumeAllRemoteAudio() {
+  tiles.forEach(t => {
+    if (t.isLocal || !t.audio || !t.audio.srcObject || deafened) return;
+    applyOutputToAudio(t.audio, false).then(() => t.audio.play().catch(() => {}));
+  });
+}
+window.addEventListener('pointerdown', resumeAllRemoteAudio, { passive: true });
+window.addEventListener('keydown', resumeAllRemoteAudio);
+
+const statusEl = document.getElementById('status');
+function statusMsg(text) { statusEl.textContent = text; }
+
+/* ---------- profile UI ---------- */
+document.getElementById('profileName').value = profile.name;
+document.getElementById('profileAvatar').textContent = profile.avatar;
+document.getElementById('homeName').textContent = profile.name;
+document.getElementById('homeAvatar').textContent = profile.avatar;
+document.getElementById('inputVolume').value = profile.inputVolume;
+document.getElementById('outputVolume').value = profile.outputVolume;
+
+document.getElementById('profileName').addEventListener('input', e => {
+  profile.name = e.target.value.trim() || 'Visitante';
+  saveProfile();
+  document.getElementById('homeName').textContent = profile.name;
+  updateTileLabel('local', profile.name);
+  broadcastProfile();
+});
+
+function cycleAvatar() {
+  const idx = AVATARS.indexOf(profile.avatar);
+  profile.avatar = AVATARS[(idx + 1) % AVATARS.length];
+  saveProfile();
+  document.getElementById('profileAvatar').textContent = profile.avatar;
+  document.getElementById('homeAvatar').textContent = profile.avatar;
+  updateTileLabel('local', undefined, profile.avatar);
+  broadcastProfile();
+}
+
+/* ---------- nav ---------- */
+function setView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('.navitem').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+}
+
+/* ---------- peer setup ---------- */
+// Além dos servidores STUN, incluímos servidores TURN públicos (Open Relay Project).
+// Sem TURN, duas pessoas atrás de redes mais restritas (roteador de operadora, Wi-Fi
+// de empresa/faculdade, dupla-NAT etc.) muitas vezes não conseguem se conectar direto
+// e a chamada nunca fecha — isso é a causa mais comum de "a call não funciona".
+peer = new Peer(undefined, {
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+    ]
+  }
+});
+peer.on('open', id => {
+  myId = id;
+  document.getElementById('sidebarMyid').textContent = id;
+  updateInviteLink();
+  if (autoJoinRoomId) { document.getElementById('roomId').value = autoJoinRoomId; enterRoom(); autoJoinRoomId = null; }
+});
+const PEER_ERROR_MESSAGES = {
+  'peer-unavailable': 'Não encontrei ninguém com esse ID de sala. Confira se copiou certo ou se a pessoa ainda está na sala.',
+  'network': 'Falha de rede ao tentar conectar. Veja sua internet e tente de novo.',
+  'webrtc': 'O navegador teve um problema para abrir a conexão de voz/vídeo (WebRTC).',
+  'browser-incompatible': 'Seu navegador não tem suporte completo a chamadas — tente Chrome, Edge ou Firefox atualizados.',
+  'disconnected': 'Você caiu do servidor de sinalização. Tentando reconectar...',
+  'server-error': 'O servidor de sinalização teve um problema. Tente novamente em instantes.',
+  'socket-error': 'Erro de conexão com o servidor de sinalização.',
+  'socket-closed': 'A conexão com o servidor de sinalização caiu. Tentando reconectar...',
+  'unavailable-id': 'Esse ID já está em uso, gerando outro automaticamente...'
+};
+peer.on('error', err => {
+  statusMsg(PEER_ERROR_MESSAGES[err.type] || ('Erro: ' + err.type));
+  if (err.type === 'unavailable-id') { setTimeout(() => { peer.reconnect(); }, 500); }
+  if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
+    updateConnBadge('bad', 'sem conexão com o servidor');
+  }
+});
+peer.on('disconnected', () => {
+  updateConnBadge('bad', 'reconectando...');
+  setTimeout(() => { try { peer.reconnect(); } catch (e) {} }, 1000);
+});
+peer.on('close', () => { updateConnBadge('bad', 'desconectado'); });
+
+peer.on('call', incoming => {
+  const id = incoming.peer;
+  if (inRoom) {
+    incoming.answer(localStream);
+    if (participants.has(id)) { participants.get(id).call = incoming; wireCall(id, incoming); }
+    else { wireParticipant(id, incoming, peer.connect(id)); }
+  } else {
+    pendingCall = incoming;
+    document.getElementById('ringOverlay').style.display = 'flex';
+  }
+});
+
+peer.on('connection', dataConn => {
+  const id = dataConn.peer;
+  if (!inRoom) { dataConn.close(); return; }
+  if (participants.has(id)) { participants.get(id).dataConn = dataConn; wireDataConn(id, dataConn); }
+  else { wireParticipant(id, peer.call(id, localStream), dataConn); }
+});
+
+/* ---------- mic ---------- */
+function makeBlankVideoTrack() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2; canvas.height = 2;
+  return canvas.captureStream(1).getVideoTracks()[0];
+}
+
+async function populateMicSelect() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const mics = devices.filter(d => d.kind === 'audioinput');
+    const sel = document.getElementById('micSelect');
+    sel.innerHTML = '';
+    mics.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.textContent = d.label || ('Microfone ' + (i + 1));
+      sel.appendChild(opt);
+    });
+    if (profile.micId && mics.some(d => d.deviceId === profile.micId)) sel.value = profile.micId;
+    await updateDeviceHintForPermission(mics);
+  } catch (e) { /* sem permissão ainda */ }
+}
+// O navegador só mostra a lista real de microfones (com nomes) depois que o site
+// recebe permissão pelo menos uma vez. Antes disso, ele devolve só 1 entrada
+// genérica ("Microfone 1") por privacidade — não é bug do Callzin, é assim que o
+// Chrome/Edge/Firefox funcionam pra qualquer site (o Discord só mostra tudo certo
+// porque é um app instalado, com permissão de sistema já concedida).
+async function updateDeviceHintForPermission(mics) {
+  const hint = document.getElementById('deviceStatusHint');
+  if (!hint) return;
+  const hasRealLabels = mics.some(d => d.label);
+  if (hasRealLabels) {
+    hint.style.color = '#8891a3';
+    hint.textContent = 'Dispositivos liberados! Fale perto do microfone pra ver a barra verde se mexer.';
+    return;
+  }
+  let stateMsg = 'ainda não foi liberada';
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const status = await navigator.permissions.query({ name: 'microphone' });
+      if (status.state === 'denied') stateMsg = 'foi negada';
+    }
+  } catch (e) { /* Firefox e alguns navegadores não suportam consultar essa permissão */ }
+  hint.style.color = '#ffcd3c';
+  hint.textContent = mics.length <= 1
+    ? '⚠️ Só aparece "Microfone 1" genérico porque a permissão de microfone ' + stateMsg + ' pra este site. Clique em "ativar microfone" acima e, quando o navegador perguntar, escolha Permitir. Se não aparecer nenhum pop-up, clique no cadeado/ícone ao lado do endereço do site e libere o microfone manualmente.'
+    : hint.textContent;
+}
+async function populateSpeakerSelect() {
+  const sel = document.getElementById('speakerSelect');
+  const hint = document.getElementById('speakerHint');
+  const supported = typeof HTMLMediaElement !== 'undefined' && !!HTMLMediaElement.prototype.setSinkId;
+  if (!supported) {
+    sel.innerHTML = '<option>Padrão do sistema</option>';
+    sel.disabled = true;
+    hint.textContent = 'Seu navegador não permite escolher a saída de áudio (funciona no Chrome/Edge).';
+    return;
+  }
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const speakers = devices.filter(d => d.kind === 'audiooutput');
+    sel.innerHTML = '';
+    speakers.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.textContent = d.label || ('Alto-falante ' + (i + 1));
+      sel.appendChild(opt);
+    });
+    if (profile.speakerId && speakers.some(d => d.deviceId === profile.speakerId)) sel.value = profile.speakerId;
+    hint.textContent = 'Pode trocar o alto-falante mesmo durante a chamada.';
+  } catch (e) { /* sem permissão ainda */ }
+}
+function onSpeakerChange() {
+  const id = document.getElementById('speakerSelect').value;
+  if (!id) return;
+  profile.speakerId = id; saveProfile();
+  tiles.forEach(t => {
+    if (t.isLocal) return;
+    if (t.audio && typeof t.audio.setSinkId === 'function') {
+      t.audio.setSinkId(id).catch(e => statusMsg('Não consegui trocar a saída: ' + (e.message || e.name)));
+    }
+    if (typeof t.video.setSinkId === 'function') {
+      t.video.setSinkId(id).catch(() => {});
+    }
+  });
+}
+navigator.mediaDevices.enumerateDevices().then(() => { populateMicSelect(); populateSpeakerSelect(); }).catch(() => {});
+navigator.mediaDevices.ondevicechange = () => { populateMicSelect(); populateSpeakerSelect(); };
+
+function micErrorMessage(e) {
+  const name = e && e.name;
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return 'Permissão de microfone negada. Clique no cadeado ao lado do endereço e libere o microfone pra esse site.';
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return 'Nenhum microfone encontrado com esse dispositivo. Ele pode ter sido desconectado.';
+  if (name === 'NotReadableError' || name === 'TrackStartError') return 'O microfone está sendo usado por outro programa (ex.: outro app de voz, OBS, etc.) e não deixou o navegador acessá-lo. Feche o outro programa e tente de novo.';
+  if (name === 'OverconstrainedError') return 'Esse dispositivo não aceitou a configuração pedida. Tente escolher outro microfone.';
+  return 'Não consegui acessar o microfone: ' + (e && (e.message || e.name) || e);
+}
+
+async function onMicChange() {
+  const id = document.getElementById('micSelect').value;
+  if (!id) return;
+  profile.micId = id; saveProfile();
+  if (!localStream) return;
+  try {
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      audio: { deviceId: { exact: id }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    });
+    // solta a faixa antiga antes de trocar — alguns dispositivos (mics virtuais como
+    // WO Mic / Steam Streaming Microphone) só liberam acesso a um consumidor por vez
+    // e "travam" se a faixa anterior continuar aberta, dando a impressão de que a
+    // troca "não funciona".
+    if (rawMicStream) rawMicStream.getTracks().forEach(t => t.stop());
+    rawMicStream = newStream;
+    connectMicToMix(newStream.getAudioTracks()[0]);
+    statusMsg('Microfone atualizado.');
+  } catch (e) { statusMsg(micErrorMessage(e)); }
+}
+
+async function getLocalStream() {
+  if (localStream) return localStream;
+  blankVideoTrack = makeBlankVideoTrack();
+  ensureMixGraph();
+  // se já existia uma captura de teste (do botão "ativar dispositivos"), solta ela
+  // antes de pedir uma nova — evita dois pedidos concorrentes pro mesmo microfone
+  if (rawMicStream) { rawMicStream.getTracks().forEach(t => t.stop()); rawMicStream = null; }
+  let micStream = null;
+  const baseAudio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  const audioConstraints = profile.micId ? { ...baseAudio, deviceId: { exact: profile.micId } } : baseAudio;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+  } catch (e) {
+    try { micStream = await navigator.mediaDevices.getUserMedia({ audio: baseAudio }); }
+    catch (e2) { statusMsg(micErrorMessage(e2) + ' Entrando só com vídeo/tela por enquanto.'); }
+  }
+  if (micStream) {
+    rawMicStream = micStream;
+    connectMicToMix(micStream.getAudioTracks()[0]);
+    if (micGainNode) micGainNode.gain.value = micOn ? micGainValue : 0; // garante que não fique mudo por causa do teste anterior
+  }
+  localStream = new MediaStream();
+  localStream.addTrack(blankVideoTrack);
+  localStream.addTrack(sentAudioTrack);
+  populateMicSelect();
+  populateSpeakerSelect();
+  return localStream;
+}
+
+/* ---------- ativar dispositivos / testar antes mesmo de entrar numa sala ---------- */
+async function activateDevices() {
+  const btn = document.getElementById('activateDevicesBtn');
+  btn.disabled = true; btn.textContent = 'ativando...';
+  try {
+    const testStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    });
+    if (!localStream) {
+      // ainda não entrou em sala: usa essa captura só pra mostrar o medidor de nível
+      // e revelar os nomes reais dos dispositivos, sem mandar áudio pra ninguém
+      if (rawMicStream) rawMicStream.getTracks().forEach(t => t.stop());
+      rawMicStream = testStream;
+      connectMicToMix(testStream.getAudioTracks()[0]);
+      if (micGainNode) micGainNode.gain.value = 0; // não solta som, só alimenta o medidor
+    } else {
+      testStream.getTracks().forEach(t => t.stop()); // já tem stream ativo, só precisava da permissão
+    }
+    await populateMicSelect();
+    await populateSpeakerSelect();
+    btn.textContent = '✅ dispositivos ativados';
+  } catch (e) {
+    statusMsg(micErrorMessage(e));
+    const hint = document.getElementById('deviceStatusHint');
+    hint.style.color = '#ffcd3c';
+    hint.textContent = '⚠️ ' + micErrorMessage(e);
+    btn.textContent = '🔓 ativar microfone e ver dispositivos';
+  }
+  btn.disabled = false;
+}
+function testSpeaker() {
+  try {
+    ensureAudioCtx();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.15;
+    osc.frequency.value = 440;
+    osc.connect(gain);
+    const testEl = new Audio();
+    // usamos um elemento <audio> real pra poder aplicar setSinkId (saída escolhida);
+    // o osc alimenta um MediaStreamDestination que vira a fonte desse elemento
+    const dest = audioCtx.createMediaStreamDestination();
+    gain.connect(dest);
+    testEl.srcObject = dest.stream;
+    testEl.volume = outputVolumeValue;
+    if (profile.speakerId && typeof testEl.setSinkId === 'function') testEl.setSinkId(profile.speakerId).catch(() => {});
+    osc.start();
+    testEl.play().catch(() => {});
+    setTimeout(() => { osc.stop(); testEl.pause(); }, 700);
+  } catch (e) { statusMsg('Não consegui tocar o som de teste: ' + (e.message || e.name)); }
+}
+
+function onScreenQualityChange() {
+  profile.screenQuality = document.getElementById('screenQualitySelect').value;
+  saveProfile();
+}
+function onSystemAudioCheckChange() {
+  profile.systemAudio = document.getElementById('systemAudioCheck').checked;
+  saveProfile();
+}
+document.getElementById('screenQualitySelect').value = profile.screenQuality;
+document.getElementById('systemAudioCheck').checked = profile.systemAudio;
+
+function copyId() {
+  navigator.clipboard.writeText(myId || '');
+  statusMsg('ID copiado!');
+}
+
+/* ---------- status de conexão ---------- */
+function updateConnBadge(state, text) {
+  const dot = document.getElementById('connDot');
+  const label = document.getElementById('connText');
+  if (!dot || !label) return;
+  dot.classList.remove('ok', 'bad');
+  if (state) dot.classList.add(state);
+  label.textContent = text;
+}
+
+/* ---------- ensurdecer (não ouvir ninguém, mas continua enviando seu áudio) ---------- */
+function toggleDeafen() {
+  deafened = !deafened;
+  document.getElementById('deafenBtn').classList.toggle('deafened', deafened);
+  tiles.forEach(t => {
+    if (t.isLocal) return;
+    t.video.muted = true;
+    if (t.audio) t.audio.muted = deafened;
+  });
+}
+
+/* ---------- link de convite (?room=SEU_ID) ---------- */
+function copyInviteLink() {
+  const input = document.getElementById('inviteLink');
+  navigator.clipboard.writeText(input.value);
+  statusMsg('Link copiado!');
+}
+function updateInviteLink() {
+  if (!myId) return;
+  const url = new URL(location.href);
+  url.search = ''; url.hash = '';
+  url.searchParams.set('room', myId);
+  document.getElementById('inviteLink').value = url.toString();
+  document.getElementById('inviteBox').style.display = 'block';
+}
+(function readRoomFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const room = params.get('room');
+  if (room) { autoJoinRoomId = room; document.getElementById('roomId').value = room; statusMsg('Entrando na sala do link...'); }
+})();
+
+/* ---------- atalho de teclado: M alterna o microfone ---------- */
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() !== 'm') return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return; // não atrapalha quando o usuário está digitando
+  if (inRoom) toggleMic();
+});
+
+/* ---------- tiles ---------- */
+function ensureTile(id, { name, avatar, isLocal } = {}) {
+  if (tiles.has(id)) return tiles.get(id);
+  const wrap = document.createElement('div');
+  wrap.className = 'vwrap';
+  wrap.id = 'tile-' + id;
+
+  const video = document.createElement('video');
+  video.autoplay = true; video.playsInline = true;
+  video.muted = true;
+
+  const audio = document.createElement('audio');
+  audio.className = 'remote-audio';
+  audio.autoplay = true;
+  audio.playsInline = true;
+  audio.muted = !!isLocal || deafened;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'avatar-overlay';
+  const circle = document.createElement('div');
+  circle.className = 'avatar-circle';
+  circle.textContent = avatar || '🙂';
+  const label = document.createElement('span');
+  label.className = 'avatar-label';
+  label.textContent = isLocal ? 'tela não compartilhada' : 'aguardando transmissão';
+  overlay.append(circle, label);
+
+  const fsBtn = document.createElement('button');
+  fsBtn.className = 'fs-btn'; fsBtn.title = 'tela cheia'; fsBtn.textContent = '⛶';
+  fsBtn.onclick = () => toggleFullscreen('tile-' + id);
+
+  const tag = document.createElement('span');
+  tag.className = 'tag';
+  tag.textContent = (name || '...') + (isLocal ? ' (você)' : '');
+
+  wrap.append(video, audio, overlay, fsBtn, tag);
+  document.getElementById('videos').appendChild(wrap);
+
+  const obj = { wrap, video, audio, overlay, circle, label, tag, isLocal };
+  tiles.set(id, obj);
+  return obj;
+}
+function removeTile(id) { const t = tiles.get(id); if (t) { t.wrap.remove(); tiles.delete(id); } }
+function updateTileLabel(id, name, avatar) {
+  const t = tiles.get(id); if (!t) return;
+  if (name !== undefined) t.tag.textContent = name + (t.isLocal ? ' (você)' : '');
+  if (avatar !== undefined) t.circle.textContent = avatar;
+}
+function setTileSharing(id, sharing) {
+  const t = tiles.get(id); if (t) t.overlay.style.display = sharing ? 'none' : 'flex';
+}
+function updateSpotlight() {
+  const videosEl = document.getElementById('videos');
+  let spotlightId = mySharing ? 'local' : null;
+  if (!spotlightId) for (const [id, p] of participants) { if (p.sharing) { spotlightId = id; break; } }
+
+  let thumbrow = document.getElementById('thumbrow');
+  if (spotlightId) {
+    videosEl.classList.add('has-spotlight');
+    if (!thumbrow) { thumbrow = document.createElement('div'); thumbrow.id = 'thumbrow'; thumbrow.className = 'thumbrow'; videosEl.appendChild(thumbrow); }
+    tiles.forEach((t, id) => {
+      if (id === spotlightId) { t.wrap.classList.add('spotlight'); t.wrap.classList.remove('thumb'); videosEl.insertBefore(t.wrap, thumbrow); }
+      else { t.wrap.classList.remove('spotlight'); t.wrap.classList.add('thumb'); thumbrow.appendChild(t.wrap); }
+    });
+  } else {
+    videosEl.classList.remove('has-spotlight');
+    tiles.forEach(t => { t.wrap.classList.remove('spotlight', 'thumb'); videosEl.appendChild(t.wrap); });
+    if (thumbrow) thumbrow.remove();
+  }
+}
+function updateParticipantCount() {
+  const n = participants.size + 1;
+  document.getElementById('roomCount').textContent = 'Sala • ' + n + (n === 1 ? ' pessoa' : ' pessoas');
+}
+function toggleFullscreen(wrapId) {
+  const el = document.getElementById(wrapId);
+  if (document.fullscreenElement) document.exitFullscreen();
+  else el.requestFullscreen();
+}
+
+/* ---------- mesh (multi-pessoa) ---------- */
+function wireCall(id, call) {
+  call.on('stream', async stream => {
+    const t = tiles.get(id) || ensureTile(id, participants.get(id) || {});
+
+    // O vídeo remoto serve só para a imagem. A voz é reproduzida pelo <audio>.
+    t.video.srcObject = stream;
+    t.video.muted = true;
+    t.audio.srcObject = stream;
+    await applyOutputToVideo(t.video, t.isLocal);
+    await applyOutputToAudio(t.audio, t.isLocal);
+
+    try {
+      await t.audio.play();
+    } catch (e) {
+      statusMsg('Clique uma vez na página para liberar o áudio da chamada.');
+    }
+
+    try {
+      t.video.play().catch(() => {});
+    } catch (e) {}
+
+    const audioTracks = stream.getAudioTracks();
+    if (!audioTracks.length) {
+      statusMsg('A conexão com ' + (participants.get(id)?.name || 'o participante') + ' chegou sem áudio.');
+    } else {
+      audioTracks.forEach(track => {
+        track.onmute = () => statusMsg('O microfone de ' + (participants.get(id)?.name || 'o participante') + ' está mudo.');
+        track.onunmute = () => { if (!deafened) resumeAllRemoteAudio(); };
+        track.onended = () => statusMsg('O áudio de ' + (participants.get(id)?.name || 'o participante') + ' foi encerrado.');
+      });
+    }
+
+    // indicador verde baseado no áudio recebido
+    try {
+      ensureAudioCtx();
+      const src = audioCtx.createMediaStreamSource(stream);
+      attachSpeakingAnalyser(id, src, false);
+    } catch (e) {}
+  });
+  call.on('close', () => removeParticipant(id));
+  call.on('error', err => {
+    statusMsg('Conexão com um participante caiu (' + (err && err.type || 'erro') + '). Removendo da sala.');
+    removeParticipant(id);
+  });
+
+  if (call.peerConnection) {
+    call.peerConnection.oniceconnectionstatechange = () => {
+      const state = call.peerConnection.iceConnectionState;
+      if (state === 'failed' || state === 'disconnected') {
+        updateConnBadge('bad', 'conexão instável');
+      } else if (state === 'connected' || state === 'completed') {
+        updateConnBadge('ok', 'conectado');
+      }
+    };
+  }
+}
+function wireDataConn(id, dataConn) {
+  dataConn.on('open', () => {
+    dataConn.send({ type: 'profile', name: profile.name, avatar: profile.avatar, sharing: mySharing });
+    const others = [...participants.keys()].filter(x => x !== id);
+    if (others.length) dataConn.send({ type: 'peers', list: others });
+  });
+  dataConn.on('data', msg => {
+    const p = participants.get(id); if (!p) return;
+    if (msg.type === 'profile') {
+      p.name = msg.name; p.avatar = msg.avatar;
+      updateTileLabel(id, p.name, p.avatar);
+      if (msg.sharing !== undefined) { p.sharing = msg.sharing; setTileSharing(id, p.sharing); updateSpotlight(); }
+    } else if (msg.type === 'sharing') {
+      p.sharing = msg.value; setTileSharing(id, p.sharing); updateSpotlight();
+    } else if (msg.type === 'peers') {
+      msg.list.forEach(pid => { if (pid !== myId && pid !== id) connectToPeer(pid); });
+    }
+  });
+  dataConn.on('close', () => removeParticipant(id));
+}
+function wireParticipant(id, call, dataConn) {
+  if (!participants.has(id)) participants.set(id, { call: null, dataConn: null, name: 'Participante', avatar: '🙂', sharing: false });
+  const p = participants.get(id);
+  if (call) { p.call = call; wireCall(id, call); }
+  if (dataConn) { p.dataConn = dataConn; wireDataConn(id, dataConn); }
+  ensureTile(id, { name: p.name, avatar: p.avatar });
+  updateParticipantCount();
+}
+function connectToPeer(id) {
+  if (id === myId || participants.has(id)) return;
+  wireParticipant(id, peer.call(id, localStream), peer.connect(id));
+  // se em 20s ninguém respondeu, avisa — geralmente é ID errado, a pessoa não está
+  // mais na sala, ou um firewall/rede muito restritiva bloqueando a conexão
+  setTimeout(() => {
+    if (!participants.has(id)) return;
+    const p = participants.get(id);
+    const state = p.call && p.call.peerConnection && p.call.peerConnection.iceConnectionState;
+    if (state !== 'connected' && state !== 'completed') {
+      statusMsg('Ainda não consegui conectar com "' + id + '". Confira se o ID está certo e se a pessoa ainda está na sala — se persistir, pode ser bloqueio de rede/firewall.');
+    }
+  }, 20000);
+}
+function removeParticipant(id) {
+  if (!participants.has(id)) return;
+  participants.delete(id);
+  detachSpeakingAnalyser(id);
+  removeTile(id);
+  updateSpotlight();
+  updateParticipantCount();
+  if (participants.size === 0) updateConnBadge('', 'sozinho na sala');
+}
+
+/* ---------- ring (chamada avulsa fora de sala) ---------- */
+async function acceptIncoming() {
+  if (!pendingCall) return;
+  document.getElementById('ringOverlay').style.display = 'none';
+  statusMsg('Conectando...');
+  try {
+    await getLocalStream();
+    inRoom = true;
+    ensureTile('local', { name: profile.name, avatar: profile.avatar, isLocal: true });
+    tiles.get('local').video.srcObject = localStream;
+    pendingCall.answer(localStream);
+    wireParticipant(pendingCall.peer, pendingCall, peer.connect(pendingCall.peer));
+    updateParticipantCount();
+    setView('room');
+  } catch (e) { statusMsg('Não consegui acessar o microfone: ' + (e.message || e.name)); }
+  pendingCall = null;
+}
+function declineIncoming() {
+  if (pendingCall) pendingCall.close();
+  pendingCall = null;
+  document.getElementById('ringOverlay').style.display = 'none';
+}
+
+/* ---------- entrar / sair da sala ---------- */
+async function enterRoom() {
+  const val = document.getElementById('roomId').value.trim();
+  statusMsg('Conectando...');
+  try { await getLocalStream(); }
+  catch (e) { statusMsg('Não consegui acessar o microfone: ' + (e.message || e.name)); return; }
+  inRoom = true;
+  ensureTile('local', { name: profile.name, avatar: profile.avatar, isLocal: true });
+  tiles.get('local').video.srcObject = localStream;
+  updateParticipantCount();
+  updateConnBadge(val ? '' : '', val ? 'conectando...' : 'sozinho na sala');
+  if (val) connectToPeer(val);
+  statusMsg('');
+  setView('room');
+}
+function leaveRoom() {
+  participants.forEach((p, id) => { if (p.call) p.call.close(); if (p.dataConn) p.dataConn.close(); detachSpeakingAnalyser(id); });
+  participants.clear();
+  tiles.forEach(t => t.wrap.remove());
+  tiles.clear();
+  const thumbrow = document.getElementById('thumbrow'); if (thumbrow) thumbrow.remove();
+  document.getElementById('videos').classList.remove('has-spotlight');
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (rawMicStream) { rawMicStream.getTracks().forEach(t => t.stop()); rawMicStream = null; }
+  if (screenShareAudioTrack) { screenShareAudioTrack.stop(); screenShareAudioTrack = null; }
+  detachSpeakingAnalyser('local');
+  mySharing = false; inRoom = false; deafened = false;
+  document.getElementById('shareBtn').classList.remove('sharing');
+  document.getElementById('deafenBtn').classList.remove('deafened');
+  const meterFill = document.getElementById('micMeterFill'); if (meterFill) meterFill.style.width = '0%';
+  updateConnBadge('', 'conectando...');
+  setView('home');
+}
+
+/* ---------- controles ---------- */
+function toggleMic() {
+  micOn = !micOn;
+  if (micGainNode) micGainNode.gain.value = micOn ? micGainValue : 0;
+  if (localStream) {
+    localStream.getAudioTracks().forEach(track => { track.enabled = micOn; });
+  }
+  document.getElementById('micBtn').classList.toggle('off', !micOn);
+}
+
+function boostBitrate(sender, quality) {
+  try {
+    const params = sender.getParameters();
+    if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+    params.encodings[0].maxBitrate = quality.bitrate;
+    if (params.encodings[0].maxFramerate !== undefined || true) params.encodings[0].maxFramerate = quality.frameRate;
+    sender.setParameters(params).catch(() => {});
+  } catch (e) {}
+}
+function replaceVideoTrackEverywhere(track, quality) {
+  const q = quality || SCREEN_QUALITY_PRESETS[profile.screenQuality] || SCREEN_QUALITY_PRESETS.fhd60;
+  participants.forEach(p => {
+    if (p.call && p.call.peerConnection) {
+      const sender = p.call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) { sender.replaceTrack(track); boostBitrate(sender, q); }
+    }
+  });
+}
+function broadcastSharing(value) {
+  participants.forEach(p => { if (p.dataConn && p.dataConn.open) p.dataConn.send({ type: 'sharing', value }); });
+}
+function broadcastProfile() {
+  participants.forEach(p => { if (p.dataConn && p.dataConn.open) p.dataConn.send({ type: 'profile', name: profile.name, avatar: profile.avatar, sharing: mySharing }); });
+}
+
+async function toggleScreen() {
+  if (!mySharing) {
+    const quality = SCREEN_QUALITY_PRESETS[profile.screenQuality] || SCREEN_QUALITY_PRESETS.fhd60;
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { width: { ideal: quality.width }, height: { ideal: quality.height }, frameRate: { ideal: quality.frameRate, max: quality.frameRate } },
+        audio: profile.systemAudio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : false,
+        // impede que a própria aba do Callzin seja capturada — sem isso, o áudio do
+        // sistema pega de volta a voz de quem está ouvindo (tocando aqui na página)
+        // e manda de volta pra pessoa, causando eco. Também some da lista de opções
+        // pra compartilhar, então dá pra escolher só outra aba, janela ou a tela toda.
+        selfBrowserSurface: 'exclude',
+        systemAudio: profile.systemAudio ? 'include' : 'exclude'
+      });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      const oldTrack = localStream.getVideoTracks()[0];
+      localStream.removeTrack(oldTrack);
+      localStream.addTrack(screenTrack);
+      tiles.get('local').video.srcObject = localStream;
+      replaceVideoTrackEverywhere(screenTrack, quality);
+
+      // som do sistema/aba compartilhada (nem toda fonte oferece isso) — entra no
+      // mesmo barramento de áudio que já está sendo enviado, sem precisar renegociar nada
+      let audioTrack = screenStream.getAudioTracks()[0];
+      if (audioTrack) {
+        const settings = screenTrack.getSettings ? screenTrack.getSettings() : {};
+        // Eco: quando a fonte NÃO é uma aba específica (é tela inteira ou janela),
+        // o "áudio do sistema" do Windows/Mac captura TUDO que está tocando — inclusive
+        // a própria chamada (a voz de quem está te ouvindo saindo dos seus alto-falantes).
+        // Isso volta pra rede e a pessoa acaba ouvindo a própria voz duplicada. Como não
+        // dá pra filtrar só essa parte, a forma segura é descartar o áudio nesse caso.
+        if (settings.displaySurface && settings.displaySurface !== 'browser') {
+          audioTrack.stop();
+          audioTrack = null;
+          statusMsg('Áudio do sistema desligado nessa transmissão: você escolheu compartilhar a tela/janela inteira, e isso causaria eco (as pessoas ouviriam a própria voz de volta). Se quiser levar áudio, compartilhe uma ABA específica (ex.: uma música) em vez da tela toda.');
+        }
+      }
+      if (audioTrack) {
+        screenShareAudioTrack = audioTrack;
+        connectScreenAudioToMix(audioTrack);
+      } else if (profile.systemAudio && !statusEl.textContent) {
+        statusMsg('A fonte escolhida não enviou áudio (marque a opção de compartilhar áudio na hora de selecionar).');
+      }
+
+      screenTrack.onended = () => stopScreenShare();
+      mySharing = true;
+      document.getElementById('shareBtn').classList.add('sharing');
+      setTileSharing('local', true);
+      broadcastSharing(true);
+      updateSpotlight();
+    } catch (e) { /* usuário cancelou a seleção */ }
+  } else {
+    stopScreenShare();
+  }
+}
+function stopScreenShare() {
+  const oldTrack = localStream.getVideoTracks()[0];
+  if (oldTrack) { localStream.removeTrack(oldTrack); oldTrack.stop(); }
+  localStream.addTrack(blankVideoTrack);
+  if (screenShareAudioTrack) {
+    disconnectScreenAudioFromMix();
+    screenShareAudioTrack.stop();
+    screenShareAudioTrack = null;
+  }
+  tiles.get('local').video.srcObject = localStream;
+  replaceVideoTrackEverywhere(blankVideoTrack);
+  mySharing = false;
+  document.getElementById('shareBtn').classList.remove('sharing');
+  setTileSharing('local', false);
+  broadcastSharing(false);
+  updateSpotlight();
+}
+</script>
+
+</body>
+</html>
