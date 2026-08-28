@@ -420,7 +420,8 @@ if (!profile.name) profile.name = 'Visitante' + Math.floor(Math.random() * 900 +
 if (!profile.avatar) profile.avatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
 if (profile.inputVolume === undefined) profile.inputVolume = 100;
 if (profile.outputVolume === undefined) profile.outputVolume = 100;
-if (!profile.screenQuality) profile.screenQuality = 'fhd60';
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+if (!profile.screenQuality) profile.screenQuality = isMobile ? 'sd30' : 'fhd60';
 if (profile.systemAudio === undefined) profile.systemAudio = true;
 function saveProfile() { localStorage.setItem('callzin_profile', JSON.stringify(profile)); }
 
