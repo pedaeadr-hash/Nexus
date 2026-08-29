@@ -8,183 +8,259 @@
 <style>
   * { box-sizing: border-box; }
 
-  @keyframes gridmove { from { background-position: 0 0; } to { background-position: 60px 60px; } }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(93, 224, 230, 0.25), 0 0 60px rgba(124, 92, 255, 0.12); }
-    50% { box-shadow: 0 0 32px rgba(93, 224, 230, 0.4), 0 0 90px rgba(124, 92, 255, 0.22); }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #050505;
+    --surface: #0b0b0d;
+    --surface-2: #111114;
+    --surface-3: #17171b;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #f5f5f7;
+    --text-dim: #9b9ba5;
+    --text-faint: #55555f;
+    --accent: #7c5cff;
+    --accent-soft: rgba(124,92,255,0.14);
+    --accent-2: #5de0e6;
+    --success: #34d399;
+    --danger: #ff5c5c;
+    --warn: #fbbf24;
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --ease: cubic-bezier(.16,.84,.32,1);
   }
 
-  html, body { margin: 0; min-height: 100vh; background: #06070a; }
-  body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    color: #eaf0f6;
-    background-image:
-      linear-gradient(rgba(93,224,230,0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(93,224,230,0.06) 1px, transparent 1px),
-      radial-gradient(circle at 50% 0%, rgba(124,92,255,0.16), transparent 55%),
-      radial-gradient(circle at 90% 90%, rgba(93,224,230,0.10), transparent 45%);
-    background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%;
-    animation: gridmove 6s linear infinite;
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes popIn { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @keyframes orbFloat {
+    0%   { transform: translate(0, 0) scale(1); }
+    33%  { transform: translate(26px, -34px) scale(1.06); }
+    66%  { transform: translate(-22px, 20px) scale(0.96); }
+    100% { transform: translate(0, 0) scale(1); }
   }
+  @keyframes grainShift {
+    0%, 100% { transform: translate(0,0); } 10% { transform: translate(-1%,-2%); }
+    30% { transform: translate(2%,1%); } 50% { transform: translate(-2%,2%); }
+    70% { transform: translate(1%,-1%); } 90% { transform: translate(-1%,2%); }
+  }
+  @keyframes ping {
+    0% { transform: scale(1); opacity: .55; }
+    100% { transform: scale(2.1); opacity: 0; }
+  }
+  @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes dashMove { to { stroke-dashoffset: -24; } }
+
+  html { margin: 0; min-height: 100vh; background: var(--bg); }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text);
+    position: relative;
+    overflow-x: hidden;
+    background-color: transparent;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 42px 42px, 42px 42px;
+  }
+  h1, h2, h3 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+
+  /* film-grain texture overlay for a techy, premium finish */
+  #grain {
+    position: fixed; inset: -10%; z-index: 40; pointer-events: none; opacity: 0.035; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    animation: grainShift 1.4s steps(2) infinite;
+  }
+
+  /* ---------- background layers (troca de fundo pela config) ---------- */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: -3; background-size: cover; background-position: center;
+    background-repeat: no-repeat; opacity: 0; transition: opacity 1.2s var(--ease); pointer-events: none;
+    filter: saturate(85%) contrast(105%);
+  }
+  .bg-layer.visible { opacity: 1; }
+  #bgOverlay {
+    position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background: linear-gradient(180deg, rgba(5,5,5,0.55), rgba(5,5,5,0.72) 55%, rgba(5,5,5,0.88) 100%);
+    opacity: 0; transition: opacity 1.2s var(--ease);
+  }
+  #bgOverlay.visible { opacity: 1; }
+
+  .orb {
+    position: fixed; z-index: -1; border-radius: 50%; filter: blur(90px);
+    pointer-events: none; animation: orbFloat 24s ease-in-out infinite; opacity: .7;
+  }
+  #orb1 { width: 380px; height: 380px; top: -120px; left: -100px; background: rgba(124,92,255,0.14); }
+  #orb2 { width: 340px; height: 340px; bottom: -140px; right: -100px; background: rgba(93,224,230,0.08); animation-duration: 28s; animation-delay: -8s; }
+
+  #app { animation: fadeIn .5s ease; }
+  .view.active { animation: fadeUp .4s var(--ease); }
 
   /* ---------- shell ---------- */
   #app { display: flex; min-height: 100vh; align-items: stretch; }
 
   #sidebar {
-    width: 264px; flex: 0 0 264px;
-    margin: 20px; padding: 20px 16px;
-    background: rgba(17, 20, 28, 0.72);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-radius: 24px; border: 1px solid rgba(93, 224, 230, 0.18);
-    display: flex; flex-direction: column; gap: 20px;
+    width: 252px; flex: 0 0 252px;
+    margin: 18px; padding: 18px 14px;
+    background: linear-gradient(180deg, var(--surface), var(--surface) 100%);
+    border-radius: var(--radius-lg); border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 18px;
     position: relative; overflow: hidden; height: fit-content;
-  }
-  #sidebar::before {
-    content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
-    background: linear-gradient(90deg, transparent, #5de0e6, transparent);
+    animation: fadeUp .45s var(--ease);
   }
 
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: .2px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: .1px; padding: 2px 4px; font-family: 'Space Grotesk', sans-serif; }
   .brand .mark {
-    width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
-    background: linear-gradient(135deg, #5de0e6, #7c5cff);
+    width: 30px; height: 30px; border-radius: 9px; flex: 0 0 auto;
+    background: var(--accent); color: #050505;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; transform: rotate(-6deg); box-shadow: 0 0 16px rgba(124,92,255,0.4);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
   }
+  .brand .mark svg { width: 16px; height: 16px; }
 
   .profile-card {
-    background: #0a0c11; border: 1px solid rgba(93,224,230,0.22); border-radius: 14px;
-    padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 9px 10px; display: flex; align-items: center; gap: 10px; transition: border-color .2s ease;
   }
+  .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+  .profile-card:focus-within { border-color: var(--border-strong); }
   .avatar-picker {
-    width: 36px; height: 36px; border-radius: 10px; flex: 0 0 auto;
-    background: rgba(93,224,230,0.12); border: 1px solid rgba(93,224,230,0.32);
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
-    cursor: pointer; transition: all .2s ease;
+    width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto;
+    background: var(--surface-3); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    cursor: pointer; transition: transform .15s var(--ease), border-color .15s ease;
   }
-  .avatar-picker:hover { background: rgba(93,224,230,0.25); box-shadow: 0 0 12px rgba(93,224,230,0.35); }
+  .avatar-picker:hover { border-color: var(--border-strong); transform: translateY(-1px); }
   #profileName {
-    background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 600;
-    width: 100%; min-width: 0; outline: none;
+    background: transparent; border: none; color: var(--text); font-size: 13.5px; font-weight: 600;
+    width: 100%; min-width: 0; outline: none; font-family: inherit;
   }
-  #profileName::placeholder { color: #566; }
+  #profileName::placeholder { color: var(--text-faint); }
 
-  .navlist { display: flex; flex-direction: column; gap: 4px; }
-  .navitem {
-    display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px;
-    border: none; background: transparent; color: #8891a3; font-size: 14px; font-weight: 600;
-    cursor: pointer; text-align: left; position: relative; overflow: hidden; transition: all .2s ease;
+  .navlist { display: flex; flex-direction: column; gap: 2px; }  .navitem {
+    display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: var(--radius-sm);
+    border: none; background: transparent; color: var(--text-dim); font-size: 13.5px; font-weight: 600;
+    cursor: pointer; text-align: left; position: relative; transition: color .15s ease, background .15s ease;
     font-family: inherit;
   }
-  .navitem:hover { background: rgba(255,255,255,0.05); color: #eaf0f6; }
-  .navitem.active { background: #171b26; color: #fff; }
-  .navitem.active::after {
-    content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 56px; pointer-events: none;
-    background: linear-gradient(90deg, transparent, rgba(124,92,255,0.35));
+  .navitem svg { width: 17px; height: 17px; flex: 0 0 auto; opacity: .85; }
+  .navitem::before {
+    content: ''; position: absolute; left: -14px; top: 50%; height: 0; width: 3px; border-radius: 0 3px 3px 0;
+    background: var(--accent); transition: height .2s var(--ease); transform: translateY(-50%);
   }
+  .navitem:hover { background: rgba(255,255,255,0.045); color: var(--text); }
+  .navitem.active { background: var(--surface-3); color: #fff; }
+  .navitem.active::before { height: 60%; }
   .navitem .badge {
-    margin-left: auto; font-size: 11px; background: rgba(62,230,107,0.18); color: #3ee66b;
-    border: 1px solid rgba(62,230,107,0.4); padding: 1px 7px; border-radius: 20px; font-weight: 700;
+    margin-left: auto; font-size: 10.5px; background: rgba(52,211,153,0.14); color: var(--success);
+    border: 1px solid rgba(52,211,153,0.35); padding: 1px 7px; border-radius: 20px; font-weight: 700;
   }
 
   .myid-box {
-    background: #0a0c11; border: 1px solid rgba(93,224,230,0.25); border-radius: 10px;
-    padding: 10px 12px; font-family: 'Consolas', monospace; font-size: 13px; color: #5de0e6;
-    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 10px; font-family: 'ui-monospace', 'SFMono-Regular', Consolas, monospace; font-size: 12px; color: var(--accent-2);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
   }
   .myid-box span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .myid-box button {
-    background: rgba(93,224,230,0.12); border: 1px solid rgba(93,224,230,0.35); color: #5de0e6;
+    background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
     padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 700;
-    white-space: nowrap; transition: all .2s ease;
+    white-space: nowrap; transition: border-color .15s ease, color .15s ease; font-family: inherit;
   }
-  .myid-box button:hover { background: rgba(93,224,230,0.25); box-shadow: 0 0 12px rgba(93,224,230,0.4); }
+  .myid-box button:hover { border-color: var(--accent-2); color: var(--accent-2); }
 
   #mainarea { flex: 1; min-width: 0; padding: 32px; display: flex; flex-direction: column; }
   .view { display: none; flex: 1; min-height: 0; flex-direction: column; }
   .view.active { display: flex; }
+  #view-home.active, #view-settings.active { align-items: center; justify-content: center; }
+  #view-home .card, #view-settings .card { width: 100%; }
 
   /* ---------- card (home / settings / ring) ---------- */
   .card {
-    max-width: 440px; padding: 32px; background: rgba(17, 20, 28, 0.72);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-radius: 16px; border: 1px solid rgba(93, 224, 230, 0.18);
-    animation: glow 4s ease-in-out infinite; position: relative;
+    max-width: 440px; padding: 30px; background: var(--surface);
+    border-radius: var(--radius-lg); border: 1px solid var(--border);
+    animation: fadeUp .45s var(--ease); position: relative;
   }
-  .card::before {
-    content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
-    background: linear-gradient(90deg, transparent, #5de0e6, transparent);
+  .card .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent-2); margin-bottom: 10px;
   }
+  .card .eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); }
   .card h1 {
-    margin-top: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.5px;
-    background: linear-gradient(90deg, #5de0e6, #7c5cff);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin: 0 0 10px; font-size: 25px; font-weight: 700; letter-spacing: 0.2px; color: var(--text);
   }
-  .card p { color: #8891a3; font-size: 14px; line-height: 1.6; }
+  .card p { color: var(--text-dim); font-size: 14px; line-height: 1.65; }
 
-  label { font-size: 12px; color: #6b7488; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  label { font-size: 11.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 1.1px; font-weight: 700; }
   input[type=text], select {
-    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
-    background: #0a0c11; color: #fff; font-size: 15px; margin: 8px 0 20px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease; font-family: inherit;
+    width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text); font-size: 14.5px; margin: 8px 0 20px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease; font-family: inherit;
   }
   input[type=text]:focus, select:focus {
-    outline: none; border-color: #5de0e6; box-shadow: 0 0 12px rgba(93,224,230,0.3);
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
   }
+  input[type=text]::placeholder { color: var(--text-faint); }
 
   button.primary {
-    width: 100%; padding: 14px; border-radius: 10px; border: none;
-    background: linear-gradient(90deg, #5de0e6, #7c5cff); color: #06070a; font-size: 15px;
-    font-weight: 700; letter-spacing: 0.3px; cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 0 20px rgba(124,92,255,0.35);
+    width: 100%; padding: 13px; border-radius: var(--radius-sm); border: none;
+    background: var(--accent); color: #fff; font-size: 14.5px;
+    font-weight: 700; letter-spacing: 0.2px; cursor: pointer;
+    transition: transform 0.15s var(--ease), background .15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 8px 24px -8px rgba(124,92,255,0.55);
+    font-family: inherit;
   }
-  button.primary:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(124,92,255,0.55); }
-  button.primary:active { transform: translateY(0); }
+  button.primary:hover { background: #8a6dff; transform: translateY(-1px); }
+  button.primary:active { transform: translateY(0) scale(.98); }
 
-  #status { font-size: 13px; color: #8891a3; margin-top: 4px; min-height: 18px; line-height: 1.5; }
-  .hint { font-size: 12px; color: #566; margin-top: -10px; }
+  #status { font-size: 13px; color: var(--text-dim); margin-top: 4px; min-height: 18px; line-height: 1.5; }
+  .hint { font-size: 12px; color: var(--text-faint); margin-top: -10px; line-height: 1.55; }
 
   /* ---------- device test / level meter / misc controls ---------- */
   .row-actions { display: flex; gap: 10px; margin: 8px 0 20px; }
   .row-actions button.secondary, button.secondary {
-    flex: 1; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13px;
-    font-weight: 700; font-family: inherit; background: #171b26; color: #eaf0f6;
-    border: 1px solid rgba(93,224,230,0.28); transition: all .2s ease;
+    flex: 1; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px;
+    font-weight: 700; font-family: inherit; background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); transition: border-color .15s ease, background .15s ease;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   }
-  button.secondary:hover { background: #1f2432; border-color: rgba(93,224,230,0.5); }
+  button.secondary:hover { background: var(--surface-3); border-color: var(--border-strong); }
   button.secondary:disabled { opacity: .5; cursor: default; }
   .meter {
-    height: 8px; border-radius: 6px; background: #0a0c11; border: 1px solid rgba(255,255,255,0.08);
+    height: 7px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border);
     overflow: hidden; margin: 6px 0 18px;
   }
   .meter-fill {
     height: 100%; width: 0%; border-radius: 6px;
-    background: linear-gradient(90deg, #3ee66b, #5de0e6 65%, #ffcd3c 88%, #ff5c5c);
+    background: linear-gradient(90deg, var(--success), var(--accent-2) 65%, var(--warn) 88%, var(--danger));
     transition: width .05s linear;
   }
   .check-row {
     display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 18px;
-    background: #0a0c11; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
   }
-  .check-row input[type=checkbox] { margin-top: 3px; accent-color: #5de0e6; width: 15px; height: 15px; flex: 0 0 auto; }
-  .check-row .check-txt { font-size: 13px; color: #b6bdc9; line-height: 1.5; }
-  .check-row .check-txt b { color: #eaf0f6; }
+  .check-row input[type=checkbox] { margin-top: 3px; accent-color: var(--accent); width: 15px; height: 15px; flex: 0 0 auto; }
+  .check-row .check-txt { font-size: 12.5px; color: var(--text-dim); line-height: 1.55; }
+  .check-row .check-txt b { color: var(--text); }
   .invite-row { display: flex; gap: 8px; margin: 8px 0 4px; }
   .invite-row input[type=text] { flex: 1; margin: 0; }
   .invite-row button { width: auto; padding: 0 16px; white-space: nowrap; }
   .conn-badge {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #8891a3;
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim);
     margin-left: 10px; font-weight: 600; text-transform: none; letter-spacing: 0;
   }
-  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #566; }
-  .conn-dot.ok { background: #3ee66b; box-shadow: 0 0 8px #3ee66b; }
-  .conn-dot.bad { background: #ff5c5c; box-shadow: 0 0 8px #ff5c5c; }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); }
+  .conn-dot.ok { background: var(--success); box-shadow: 0 0 8px var(--success); }
+  .conn-dot.bad { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 
   /* ---------- room ---------- */
   .room-header {
-    font-size: 13px; color: #8891a3; text-transform: uppercase; letter-spacing: 1px;
-    font-weight: 700; margin: 0 0 14px;
+    font-size: 12.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 1.2px;
+    font-weight: 700; margin: 0 0 14px; display: flex; align-items: center;
   }
   #videos {
     flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -202,113 +278,183 @@
   }
 
   .vwrap {
-    position: relative; background: #000; border-radius: 14px; overflow: hidden;
-    border: 1px solid rgba(93,224,230,0.2); box-shadow: 0 0 24px rgba(93,224,230,0.08) inset;
-    min-height: 100px; transition: border-color .12s ease, box-shadow .12s ease;
+    position: relative; background: #000; border-radius: var(--radius-md); overflow: hidden;
+    border: 1px solid var(--border);
+    min-height: 100px; transition: border-color .2s ease, transform .2s var(--ease);
+    animation: popIn .3s var(--ease);
   }
+  .vwrap:hover { border-color: var(--border-strong); }
   .vwrap.speaking {
-    border-color: #3ee66b;
-    box-shadow: 0 0 0 2px rgba(62,230,107,0.55), 0 0 22px rgba(62,230,107,0.4) inset;
+    border-color: var(--success);
+    box-shadow: 0 0 0 2px rgba(52,211,153,0.4);
   }
   .vwrap:fullscreen { border-radius: 0; background: #000; }
   .vwrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .avatar-overlay {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 8px; background: radial-gradient(circle at 50% 40%, #171b26, #06070a);
+    justify-content: center; gap: 8px; background: radial-gradient(circle at 50% 40%, #131316, #050505);
   }
   .avatar-circle {
-    width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 34px; box-shadow: 0 0 30px rgba(93,224,230,0.25);
-    transition: box-shadow .12s ease;
-    border: 2px solid rgba(255,255,255,0.15); background: #171b26;
+    width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 30px;
+    transition: box-shadow .15s ease;
+    border: 1px solid var(--border); background: var(--surface-3);
   }
-  .vwrap.speaking .avatar-circle { box-shadow: 0 0 0 3px rgba(62,230,107,0.6), 0 0 26px rgba(62,230,107,0.5); }
-  .avatar-label { font-size: 11px; color: #8891a3; letter-spacing: 0.3px; }
+  .vwrap.speaking .avatar-circle { box-shadow: 0 0 0 3px rgba(52,211,153,0.5); }
+  .avatar-label { font-size: 11px; color: var(--text-faint); letter-spacing: 0.3px; }
   .vwrap .tag {
     position: absolute; bottom: 10px; left: 12px; font-size: 12px; font-weight: 600;
-    letter-spacing: 0.3px; color: #5de0e6; background: rgba(6,7,10,0.65); backdrop-filter: blur(6px);
-    border: 1px solid rgba(93,224,230,0.3); padding: 4px 10px; border-radius: 8px; z-index: 2;
+    letter-spacing: 0.2px; color: var(--text); background: rgba(5,5,5,0.7); backdrop-filter: blur(6px);
+    border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; z-index: 2;
     max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .vwrap .tag::before {
     content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-    background: #3ee66b; margin-right: 6px; animation: pulse 1.6s ease-in-out infinite;
+    background: var(--success); margin-right: 6px; animation: pulse 1.6s ease-in-out infinite;
   }
   .remote-audio { display: none; }
   .fs-btn {
-    position: absolute; top: 10px; right: 10px; z-index: 2; width: 30px; height: 30px;
-    border-radius: 8px; border: 1px solid rgba(93,224,230,0.3); background: rgba(6,7,10,0.65);
-    backdrop-filter: blur(6px); color: #5de0e6; cursor: pointer; font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 10px; right: 10px; z-index: 2; width: 28px; height: 28px;
+    border-radius: 8px; border: 1px solid var(--border); background: rgba(5,5,5,0.7);
+    backdrop-filter: blur(6px); color: var(--text); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: border-color .15s ease, color .15s ease;
   }
-  .fs-btn:hover { background: rgba(93,224,230,0.2); }
+  .fs-btn svg { width: 14px; height: 14px; }
+  .fs-btn:hover { border-color: var(--accent-2); color: var(--accent-2); }
 
   #bar {
-    display: flex; justify-content: center; gap: 16px; padding: 18px; margin-top: 10px;
-    background: rgba(17,20,28,0.85); backdrop-filter: blur(16px); border-radius: 16px;
-    border: 1px solid rgba(93,224,230,0.15);
+    display: flex; justify-content: center; align-items: center; gap: 10px; padding: 14px; margin-top: 10px;
+    background: var(--surface); border-radius: 999px;
+    border: 1px solid var(--border); animation: fadeUp .45s var(--ease); width: fit-content;
+    margin-left: auto; margin-right: auto;
   }
   #bar button {
-    width: 54px; height: 54px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
-    background: #1a1e28; color: #eaf0f6; font-size: 20px; cursor: pointer; transition: all 0.2s ease;
+    width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text); cursor: pointer;
+    transition: transform 0.15s var(--ease), background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    display: flex; align-items: center; justify-content: center; position: relative;
   }
-  #bar button:hover { background: #232838; transform: translateY(-2px); }
-  #bar button.off { background: rgba(216,60,60,0.2); border-color: #d83c3c; }
-  #bar button.deafened { background: rgba(255,205,60,0.18); border-color: #ffcd3c; color: #ffcd3c; }
-  #bar button.sharing { background: linear-gradient(90deg, #5de0e6, #7c5cff); color: #06070a; border-color: transparent; }
-  #bar button#hangup { background: rgba(216,60,60,0.15); border-color: rgba(216,60,60,0.5); }
-  #bar button#hangup:hover { background: #d83c3c; box-shadow: 0 0 20px rgba(216,60,60,0.5); }
+  #bar button svg { width: 20px; height: 20px; }
+  #bar button:hover { background: var(--surface-3); border-color: var(--border-strong); transform: translateY(-2px); }
+  #bar button:active { transform: translateY(0) scale(.94); }
+  #bar button.off { background: rgba(255,92,92,0.14); border-color: rgba(255,92,92,0.4); color: var(--danger); }
+  #bar button.off::after {
+    content: ''; position: absolute; width: 2px; height: 26px; background: var(--danger);
+    transform: rotate(45deg); border-radius: 2px;
+  }
+  #bar button.deafened { background: rgba(251,191,36,0.14); border-color: rgba(251,191,36,0.4); color: var(--warn); }
+  #bar button.sharing { background: var(--accent); color: #fff; border-color: transparent; box-shadow: 0 6px 20px -6px rgba(124,92,255,0.65); }
+  #bar button#hangup { background: rgba(255,92,92,0.12); border-color: rgba(255,92,92,0.35); color: var(--danger); }
+  #bar button#hangup:hover { background: var(--danger); color: #fff; border-color: transparent; box-shadow: 0 6px 20px -6px rgba(255,92,92,0.6); }
 
   /* ---------- ring overlay ---------- */
   .ring-overlay {
     position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    background: rgba(6,7,10,0.75); backdrop-filter: blur(4px); z-index: 50;
+    background: rgba(5,5,5,0.82); backdrop-filter: blur(6px); z-index: 50;
   }
   .ring-card { text-align: center; }
-  .ring-card h1 { animation: pulse 1.6s ease-in-out infinite; }
-  .ring-card .actions { display: flex; gap: 12px; margin-top: 20px; }
-  .ring-card button { flex: 1; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: transform 0.15s ease; }
+  .ring-card .ring-avatar-wrap { position: relative; width: 76px; height: 76px; margin: 4px auto 18px; }
+  .ring-card .ring-avatar-wrap .avatar-circle { width: 76px; height: 76px; font-size: 34px; position: relative; z-index: 2; }
+  .ring-card .ring-avatar-wrap .ping {
+    position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--accent-2);
+    animation: ping 1.8s cubic-bezier(0,0,.2,1) infinite;
+  }
+  .ring-card .ring-avatar-wrap .ping.d2 { animation-delay: .6s; }
+  .ring-card h1 { font-size: 20px; }
+  .ring-card .actions { display: flex; gap: 12px; margin-top: 22px; }
+  .ring-card button { flex: 1; padding: 13px; border-radius: var(--radius-sm); border: none; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: transform 0.15s ease; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
   .ring-card button:hover { transform: translateY(-1px); }
-  #acceptBtn { background: linear-gradient(90deg, #3ee66b, #23a55a); color: #06070a; box-shadow: 0 0 20px rgba(62,230,107,0.35); }
-  #declineBtn { background: rgba(216,60,60,0.15); color: #ff6b6b; border: 1px solid rgba(216,60,60,0.5) !important; }
+  #acceptBtn { background: var(--success); color: #05130d; }
+  #declineBtn { background: rgba(255,92,92,0.12); color: var(--danger); border: 1px solid rgba(255,92,92,0.4) !important; }
+  .ring-card { animation: popIn .3s var(--ease); }
+
+  /* ---------- galeria de fundos ---------- */
+  .bg-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 8px 0 4px;
+  }
+  .bg-thumb {
+    position: relative; aspect-ratio: 16/10; border-radius: var(--radius-sm); overflow: hidden; cursor: pointer;
+    border: 1.5px solid var(--border); background-size: cover; background-position: center;
+    background-color: var(--surface-2); transition: border-color .15s ease, transform .15s var(--ease);
+  }
+  .bg-thumb:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .bg-thumb.selected { border-color: var(--accent-2); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .bg-thumb .bg-thumb-label {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 5px 7px; font-size: 9.5px; font-weight: 700;
+    letter-spacing: .3px; color: #fff; background: linear-gradient(0deg, rgba(0,0,0,0.8), transparent);
+  }
+  .bg-thumb.none-thumb { display: flex; align-items: center; justify-content: center; color: var(--text-faint); background: var(--surface-2); }
+  .bg-thumb.none-thumb svg { width: 18px; height: 18px; }
+  .bg-thumb .check {
+    position: absolute; top: 5px; right: 5px; width: 17px; height: 17px; border-radius: 50%;
+    background: var(--accent-2); color: #05130d; display: none;
+    align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(93,224,230,0.6);
+  }
+  .bg-thumb .check svg { width: 10px; height: 10px; }
+  .bg-thumb.selected .check { display: flex; }
 
   /* ---------- mobile ---------- */
   @media (max-width: 900px) {
     #app { flex-direction: column; }
     #sidebar {
-      width: auto; margin: 12px; padding: 12px 14px; border-radius: 18px;
+      width: auto; margin: 12px; padding: 12px 14px; border-radius: var(--radius-md);
       flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px;
     }
     .brand span.wordmark { display: none; }
-    .profile-card { flex: 1 1 auto; min-width: 120px; }
-    .navlist { flex-direction: row; gap: 4px; }
+    .navlist { flex-direction: row; gap: 4px; order: 2; }
     .navitem span { display: none; }
     .navitem { padding: 10px; justify-content: center; }
-    .myid-box { flex: 1 1 100%; order: 5; }
+    .navitem::before { left: 50%; top: -2px; bottom: auto; height: 3px; width: 0; transform: translateX(-50%); border-radius: 0 0 3px 3px; }
+    .navitem.active::before { width: 60%; height: 3px; }
+    .sidebar-footer { margin-top: 0; flex: 1 1 100%; order: 3; flex-direction: row; flex-wrap: wrap; }
+    .profile-card { flex: 1 1 auto; min-width: 120px; }
+    .myid-box { flex: 1 1 100%; }
     #mainarea { padding: 16px; }
   }
+
 </style>
 </head>
 <body>
 
+<div id="grain"></div>
+<div class="bg-layer" id="bgLayerA"></div>
+<div class="bg-layer" id="bgLayerB"></div>
+<div id="bgOverlay"></div>
+<div class="orb" id="orb1"></div>
+<div class="orb" id="orb2"></div>
+
 <div id="app">
   <aside id="sidebar">
-    <div class="brand"><span class="mark">📡</span><span class="wordmark">Callzin</span></div>
-
-    <div class="profile-card">
-      <div class="avatar-picker" id="avatarPicker" onclick="cycleAvatar()" title="trocar avatar"><span id="profileAvatar">🙂</span></div>
-      <input id="profileName" type="text" maxlength="18" placeholder="seu nome">
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 15C4 10.0294 8.02944 6 13 6C17.9706 6 22 10.0294 22 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="13" cy="15" r="2.4" fill="currentColor"/><path d="M2 15H4M22 15H24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <span class="wordmark">Callzin</span>
     </div>
 
     <nav class="navlist">
-      <button class="navitem active" data-view="home" onclick="setView('home')">🏠 <span>Início</span></button>
-      <button class="navitem" data-view="room" onclick="setView('room')">👥 <span>Sala</span></button>
-      <button class="navitem" data-view="settings" onclick="setView('settings')">⚙️ <span>Configurações</span></button>
+      <button class="navitem active" data-view="home" onclick="setView('home')">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 10V19C5.5 19.5523 5.94772 20 6.5 20H9.5V15C9.5 14.4477 9.94772 14 10.5 14H13.5C14.0523 14 14.5 14.4477 14.5 15V20H17.5C18.0523 20 18.5 19.5523 18.5 19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Início</span>
+      </button>
+      <button class="navitem" data-view="room" onclick="setView('room')">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19C3.5 15.9624 6.13401 13.5 9 13.5C11.866 13.5 14.5 15.9624 14.5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M15.5 6.5C16.8807 6.5 18 7.61929 18 9C18 10.3807 16.8807 11.5 15.5 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 13.7C18.36 14.14 20.5 15.9 20.5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Sala</span>
+      </button>
+      <button class="navitem" data-view="settings" onclick="setView('settings')">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15A1.65 1.65 0 0018 17.1a1.65 1.65 0 00.6 2.1l.1.06a2 2 0 11-2.8 2.8l-.06-.1a1.65 1.65 0 00-2.1-.6 1.65 1.65 0 00-1 1.51V23a2 2 0 11-4 0v-.09A1.65 1.65 0 009.9 21.4a1.65 1.65 0 00-2.1.6l-.06.1a2 2 0 11-2.8-2.8l.1-.06a1.65 1.65 0 00.6-2.1 1.65 1.65 0 00-1.51-1H4a2 2 0 110-4h.09A1.65 1.65 0 005.6 9.9a1.65 1.65 0 00-.6-2.1l-.1-.06a2 2 0 112.8-2.8l.06.1a1.65 1.65 0 002.1.6h.05A1.65 1.65 0 0011.5 4.1V4a2 2 0 114 0v.09c.03.65.4 1.23 1 1.51h.05a1.65 1.65 0 002.1-.6l.06-.1a2 2 0 112.8 2.8l-.1.06a1.65 1.65 0 00-.6 2.1v.05c.29.6.86.98 1.51 1H23a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <span>Configurações</span>
+      </button>
     </nav>
 
-    <div class="myid-box">
-      <span id="sidebarMyid">gerando...</span>
-      <button onclick="copyId()">copiar</button>
+    <div class="sidebar-footer">
+      <div class="profile-card">
+        <div class="avatar-picker" id="avatarPicker" onclick="cycleAvatar()" title="trocar avatar"><span id="profileAvatar">🙂</span></div>
+        <input id="profileName" type="text" maxlength="18" placeholder="seu nome">
+      </div>
+
+      <div class="myid-box">
+        <span id="sidebarMyid">gerando...</span>
+        <button onclick="copyId()">copiar</button>
+      </div>
     </div>
   </aside>
 
@@ -316,7 +462,8 @@
 
     <section id="view-home" class="view active">
       <div class="card">
-        <h1>Callzin 📞</h1>
+        <span class="eyebrow">Callzin</span>
+        <h1>Bem-vindo de volta</h1>
         <p>Oi, <span id="homeAvatar">🙂</span> <b id="homeName">...</b>. Entre em uma sala com quantas pessoas quiser, igual no Discord: crie uma sala e mande seu ID, ou cole o ID de alguém que já está numa sala.</p>
 
         <label>ID da sala (deixe em branco pra criar uma nova)</label>
@@ -341,20 +488,29 @@
       </div>
       <div id="videos"></div>
       <div id="bar">
-        <button id="micBtn" onclick="toggleMic()" title="ligar/desligar microfone">🎤</button>
-        <button id="deafenBtn" onclick="toggleDeafen()" title="ensurdecer (não ouvir ninguém)">🔇</button>
-        <button id="shareBtn" onclick="toggleScreen()" title="transmitir tela">🖥️</button>
-        <button id="hangup" onclick="leaveRoom()" title="sair da sala">✖</button>
+        <button id="micBtn" onclick="toggleMic()" title="ligar/desligar microfone">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0014 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="deafenBtn" onclick="toggleDeafen()" title="ensurdecer (não ouvir ninguém)">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 13v-1a8 8 0 0116 0v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="3" y="13" width="4" height="6" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="17" y="13" width="4" height="6" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <button id="shareBtn" onclick="toggleScreen()" title="transmitir tela">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 20h8M12 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="hangup" onclick="leaveRoom()" title="sair da sala">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.6 10.8C7.4 15.6 16.6 15.6 20.4 10.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" transform="rotate(180 12 12)"/><path d="M2 9.5c2.2-2 5-3 10-3s7.8 1 10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9.5 12l5 5M14.5 12l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
       </div>
     </section>
 
     <section id="view-settings" class="view">
       <div class="card" style="max-width:480px;">
+        <span class="eyebrow">Preferências</span>
         <h1>Configurações</h1>
         <p>Sua escolha de dispositivos e seu perfil ficam salvos neste navegador.</p>
 
         <div class="row-actions">
-          <button class="secondary" id="activateDevicesBtn" onclick="activateDevices()">🔓 ativar microfone e ver dispositivos</button>
+          <button class="secondary" id="activateDevicesBtn" onclick="activateDevices()">ativar microfone e ver dispositivos</button>
         </div>
         <p class="hint" id="deviceStatusHint" style="margin-top:-4px; margin-bottom:18px;">Se os nomes dos dispositivos abaixo aparecerem como "Microfone 1", clique no botão acima pra liberar a permissão e ver os nomes reais (ex.: "WO Mic Device", "Steam Streaming Microphone" etc.)</p>
 
@@ -370,7 +526,7 @@
         <label>Dispositivo de saída (alto-falante)</label>
         <select id="speakerSelect" onchange="onSpeakerChange()"></select>
         <div class="row-actions" style="margin-top:8px;">
-          <button class="secondary" onclick="testSpeaker()">🔊 testar alto-falante</button>
+          <button class="secondary" onclick="testSpeaker()">testar alto-falante</button>
         </div>
         <p class="hint" id="speakerHint">Pode trocar o alto-falante mesmo durante a chamada.</p>
 
@@ -395,6 +551,10 @@
             Se você escolher compartilhar <b>uma aba específica</b> (ex.: uma música/vídeo), o áudio dela vai junto sem problema. Mas se escolher <b>a tela inteira ou uma janela</b>, o Windows também captura o som da própria chamada e isso cria eco (a pessoa ouve a própria voz voltando). Por isso, quando detectamos esse caso, o Callzin desliga sozinho o áudio do sistema pra evitar o eco.
           </span>
         </div>
+
+        <label>Plano de fundo</label>
+        <div class="bg-grid" id="bgGrid"></div>
+        <p class="hint" style="margin-bottom:4px;">Sua escolha fica salva neste navegador (localStorage) e é aplicada assim que a página abre.</p>
       </div>
     </section>
 
@@ -403,11 +563,22 @@
 
 <div class="ring-overlay" id="ringOverlay">
   <div class="card ring-card">
-    <h1>📞 Chamada recebida</h1>
+    <span class="eyebrow">Chamada recebida</span>
+    <div class="ring-avatar-wrap">
+      <span class="ping"></span><span class="ping d2"></span>
+      <div class="avatar-circle">📞</div>
+    </div>
+    <h1>Alguém está te chamando</h1>
     <p>Alguém quer te chamar pra uma sala no Callzin.</p>
     <div class="actions">
-      <button id="acceptBtn" onclick="acceptIncoming()">Aceitar</button>
-      <button id="declineBtn" onclick="declineIncoming()">Recusar</button>
+      <button id="acceptBtn" onclick="acceptIncoming()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 8.5c0-1.5 1-3 2.5-3.5h1.2c.5 0 1 .3 1.2.8l1 2.2c.2.5.1 1-.2 1.4l-1 1.1c-.3.4-.4.9-.1 1.3 1 1.6 2.4 3 4 4 .4.3.9.2 1.3-.1l1.1-1c.4-.3.9-.4 1.4-.2l2.2 1c.5.2.8.7.8 1.2v1.2c-.5 1.5-2 2.5-3.5 2.5-6.6 0-13-6.4-13-13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Aceitar
+      </button>
+      <button id="declineBtn" onclick="declineIncoming()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.6 10.8C7.4 15.6 16.6 15.6 20.4 10.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" transform="rotate(180 12 12)"/><path d="M2 9.5c2.2-2 5-3 10-3s7.8 1 10 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9.5 12l5 5M14.5 12l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Recusar
+      </button>
     </div>
   </div>
 </div>
@@ -609,6 +780,60 @@ function cycleAvatar() {
   updateTileLabel('local', undefined, profile.avatar);
   broadcastProfile();
 }
+
+/* ---------- plano de fundo (troca com localStorage, começa em "nenhum") ---------- */
+const BACKGROUNDS = [
+  { id: 'ds3-8k',        label: 'Dark Souls III',      url: 'https://res.cloudinary.com/xuxmagdy/image/upload/v1785894360/dark-souls-3-8k-om-1440x900_ygoxeg.jpg' },
+  { id: 'ds3-2016',      label: 'Dark Souls III',      url: 'https://res.cloudinary.com/xuxmagdy/image/upload/v1785860922/dark-souls-3-2016-video-game-1440x900_bjkwdq.jpg' },
+  { id: 'ds-remastered', label: 'Dark Souls Remastered', url: 'https://res.cloudinary.com/xuxmagdy/image/upload/v1785860901/dark-souls-remastered-4k-3x-1440x900_ab2srw.jpg' },
+  { id: 'ds3-graphics',  label: 'Dark Souls III',      url: 'https://res.cloudinary.com/xuxmagdy/image/upload/v1785860889/dark-souls-3-graphics-4k-1440x900_zzbhyl.jpg' },
+  { id: 'batman-statue', label: 'Batman',              url: 'https://res.cloudinary.com/xuxmagdy/image/upload/v1785549211/batman-statue-5k-nq-1366x768_umnqpm.jpg' },
+  { id: 'batman-knight', label: 'Batman',              url: 'https://res.cloudinary.com/xuxmagdy/image/upload/v1785549208/batman-black-knight-0t-1366x768_hp5yv1.jpg' },
+];
+
+let bgId = localStorage.getItem('callzin_bg') || 'none'; // começa sem imagem, só o fundo padrão
+let bgActiveLayer = 'A';
+
+function applyBackground(id, persist) {
+  bgId = id;
+  if (persist) localStorage.setItem('callzin_bg', id);
+  const overlay = document.getElementById('bgOverlay');
+  const bg = BACKGROUNDS.find(b => b.id === id);
+
+  if (!bg) {
+    document.getElementById('bgLayerA').classList.remove('visible');
+    document.getElementById('bgLayerB').classList.remove('visible');
+    overlay.classList.remove('visible');
+  } else {
+    const showId = bgActiveLayer === 'A' ? 'bgLayerB' : 'bgLayerA';
+    const hideId = bgActiveLayer === 'A' ? 'bgLayerA' : 'bgLayerB';
+    const showEl = document.getElementById(showId);
+    showEl.style.backgroundImage = `url('${bg.url}')`;
+    showEl.classList.add('visible');
+    document.getElementById(hideId).classList.remove('visible');
+    overlay.classList.add('visible');
+    bgActiveLayer = bgActiveLayer === 'A' ? 'B' : 'A';
+  }
+  renderBgGrid();
+}
+
+function renderBgGrid() {
+  const grid = document.getElementById('bgGrid');
+  if (!grid) return;
+  const checkSvg = '<span class="check"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  const noneSvg = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  let html = `<div class="bg-thumb none-thumb ${bgId === 'none' ? 'selected' : ''}" onclick="applyBackground('none', true)" title="Nenhum">
+    ${noneSvg}${checkSvg}
+  </div>`;
+  html += BACKGROUNDS.map(b => `
+    <div class="bg-thumb ${bgId === b.id ? 'selected' : ''}" style="background-image:url('${b.url}')" onclick="applyBackground('${b.id}', true)" title="${b.label}">
+      ${checkSvg}
+      <span class="bg-thumb-label">${b.label}</span>
+    </div>
+  `).join('');
+  grid.innerHTML = html;
+}
+applyBackground(bgId, false);
 
 /* ---------- nav ---------- */
 function setView(view) {
@@ -854,13 +1079,13 @@ async function activateDevices() {
     }
     await populateMicSelect();
     await populateSpeakerSelect();
-    btn.textContent = '✅ dispositivos ativados';
+    btn.textContent = 'dispositivos ativados';
   } catch (e) {
     statusMsg(micErrorMessage(e));
     const hint = document.getElementById('deviceStatusHint');
-    hint.style.color = '#ffcd3c';
-    hint.textContent = '⚠️ ' + micErrorMessage(e);
-    btn.textContent = '🔓 ativar microfone e ver dispositivos';
+    hint.style.color = '#fbbf24';
+    hint.textContent = micErrorMessage(e);
+    btn.textContent = 'ativar microfone e ver dispositivos';
   }
   btn.disabled = false;
 }
@@ -979,7 +1204,8 @@ function ensureTile(id, { name, avatar, isLocal } = {}) {
   overlay.append(circle, label);
 
   const fsBtn = document.createElement('button');
-  fsBtn.className = 'fs-btn'; fsBtn.title = 'tela cheia'; fsBtn.textContent = '⛶';
+  fsBtn.className = 'fs-btn'; fsBtn.title = 'tela cheia';
+  fsBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   fsBtn.onclick = () => toggleFullscreen('tile-' + id);
 
   const tag = document.createElement('span');
