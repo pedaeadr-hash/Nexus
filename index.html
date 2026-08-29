@@ -631,8 +631,6 @@ peer = new Peer(undefined, {
       { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
       { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
     ],
-    // prefere conexão direta (host) antes de tentar STUN/TURN — reduz latência
-    // quando os dois dispositivos estão na mesma rede ou com NAT simples
     iceTransportPolicy: 'all',
     sdpSemantics: 'unified-plan',
     bundlePolicy: 'max-bundle',
@@ -1066,25 +1064,34 @@ function wireCall(id, call) {
       });
     }
 
-    // reduz o buffer de jitter pra minimizar delay de áudio no celular
-    // (o padrão do navegador é conservador demais e acumula ~200-500ms desnecessários)
-    try {
-      if (t.audio && t.audio.srcObject) {
-        const receiver = call.peerConnection && call.peerConnection.getReceivers
-          ? call.peerConnection.getReceivers().find(r => r.track && r.track.kind === 'audio')
-          : null;
-        if (receiver && receiver.jitterBufferTarget !== undefined) {
-          receiver.jitterBufferTarget = 0; // mínimo possível
-        }
-      }
-    } catch (e) {}
-
     // indicador verde baseado no áudio recebido
     try {
       ensureAudioCtx();
       const src = audioCtx.createMediaStreamSource(stream);
       attachSpeakingAnalyser(id, src, false);
     } catch (e) {}
+
+    // no celular, limita o bitrate de recebimento de vídeo pra evitar travamento
+    // (o transmissor manda em alta qualidade, mas o receiver descarta o excesso)
+    if (isMobile && call.peerConnection) {
+      try {
+        const receivers = call.peerConnection.getReceivers();
+        receivers.forEach(receiver => {
+          if (receiver.track && receiver.track.kind === 'video') {
+            // jitterBufferTarget=0 reduz delay; degradationPreference prioriza framerate
+            if (receiver.jitterBufferTarget !== undefined) receiver.jitterBufferTarget = 0;
+            const params = receiver.getParameters ? receiver.getParameters() : null;
+            if (params && params.encodings && params.encodings.length) {
+              params.encodings[0].maxBitrate = 800000; // 800kbps máximo no celular
+              receiver.setParameters(params).catch(() => {});
+            }
+          }
+          if (receiver.track && receiver.track.kind === 'audio') {
+            if (receiver.jitterBufferTarget !== undefined) receiver.jitterBufferTarget = 0;
+          }
+        });
+      } catch (e) {}
+    }
   });
   call.on('close', () => removeParticipant(id));
   call.on('error', err => {
