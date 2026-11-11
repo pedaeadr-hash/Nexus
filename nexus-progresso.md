@@ -1,151 +1,33 @@
-# Nexus — Progresso do Projeto
+# Nexus — progresso
 
-> App de chamada de voz/vídeo P2P no navegador, sem servidor, sem instalação.  
-> Stack: HTML único · WebRTC · PeerJS · Vercel
+Repositório: [pedaeadr-hash/Nexus](https://github.com/pedaeadr-hash/Nexus). Aplicação estática em HTML, CSS e JavaScript com sinalização PeerJS e mídia WebRTC. Publicação automática na Vercel a partir de `main`.
 
----
+## Interface
 
-## Repositório & Deploy
+- Identidade em preto, grafite e prata; símbolo geométrico próprio e ícones vetoriais.
+- Navegação lateral no computador, trilho no tablet e navegação inferior no celular.
+- Perfis com monogramas Cromo, Carbono e Polar, preparados para receber artes próprias.
+- Transições de entrada/saída, hover, foco e preferência por movimento reduzido.
+- Preferências de áudio, transmissão, aparência e interação social.
 
-| Item | Valor |
-|---|---|
-| GitHub | `pedaeadr-hash/Nexus` |
-| URL de produção | `nexus-adrian-c778.vercel.app` |
-| Plano Vercel | Hobby (gratuito) |
-| Arquivo principal | `index.html` |
+## Camada social
 
----
+- Identidade persistente por navegador, com prova criptográfica para as conexões de dados.
+- Solicitações de amizade, aceite, recusa, cancelamento, remoção e bloqueio.
+- DMs com fila offline persistente, confirmação de entrega/leitura, respostas, edição e remoção.
+- Chamadas privadas com aceite explícito e sessões de mídia autorizadas.
+- Espaços nomeados, convites por link/DM e validade/renovação do convite.
+- Canais de texto e voz independentes, configurados pelo anfitrião.
+- Participantes e presença, voz em grupo e transmissão por chamada/canal.
+- Busca, digitação, mensagens salvas, fixadas e contagem de não lidas.
+- Controles da voz disponíveis durante a navegação, menu de canais no celular e liberação manual de áudio quando necessária.
 
-## Histórico de decisões
+## Verificação
 
-### 1. GitHub — estrutura do perfil
-- README do perfil (`pedaeadr-hash/pedaeadr-hash`) criado com vibe **clean e profissional**
-- Destaque para o Callzin como projeto principal
-- Badges de stack: HTML · CSS · JavaScript · WebRTC
-- README do repositório `Nexus` criado separadamente
+36 testes automatizados de interface, modelo e protocolo social. Conferência de três perfis de demonstração em conexões PeerJS/WebRTC reais com mídia sintética, incluindo DMs, chamadas privadas, chat e voz em grupo e transmissão de tela recebida por outro participante. Imagens em `docs/social-desktop.jpg` e `docs/social-mobile.jpg`.
 
-### 2. `.gitignore`
-Arquivo minimalista — projeto não tem `node_modules`, `.env` nem `dist`:
-```
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.log
-```
+## Limites e próxima etapa
 
-### 3. Deploy na Vercel
-- Preset: `Other` (não é Next.js)
-- Root directory: `./`
-- Sem variáveis de ambiente
-- **Problema encontrado:** arquivo estava com nome `callzinFINAL_ESTAVEL_VOZ (1) (1).html`
-- **Fix 1:** renomeado para `Index.html` — ainda quebrava (I maiúsculo, Linux é case-sensitive)
-- **Fix 2:** `git mv Index.html index.html` + commit → deploy funcionou ✅
+O anfitrião precisa permanecer conectado para manter o espaço disponível. Histórico e identidade ficam no navegador. DMs em fila precisam de remetente e destinatário conectados para serem entregues. As chamadas usam conexões entre participantes; não há backend persistente, contas recuperáveis, sincronização entre dispositivos, TURN próprio ou infraestrutura para grandes conferências.
 
-### 4. Link no WhatsApp abrindo página errada
-- Estava compartilhando URL do dashboard da Vercel (`vercel.com/adrian-c778/nexus/...`)
-- URL correta para compartilhar: `https://nexus-adrian-c778.vercel.app`
-- Obtida clicando em **Visit** no painel do deploy ✅
-
----
-
-## Limites do plano gratuito Vercel (Hobby)
-
-| Recurso | Limite/mês | Uso estimado (10 pessoas/dia) |
-|---|---|---|
-| Banda | 100 GB | ~5 MB |
-| Edge Requests | 1 milhão | ~300 |
-| Deploys | 100/dia | — |
-
-> O tráfego pesado (áudio/vídeo) é P2P direto entre os usuários — não passa pela Vercel.  
-> Risco de exceder limite: **praticamente zero**.
-
----
-
-## Melhorias aplicadas no código
-
-### v1 — Qualidade adaptativa por dispositivo
-**Problema:** celular usava Full HD 60fps por padrão, pesado demais para rede móvel.
-
-**Fix:**
-```js
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-if (!profile.screenQuality) profile.screenQuality = isMobile ? 'sd30' : 'fhd60';
-```
-- PC → Full HD 60fps (padrão anterior mantido)
-- Celular → SD 30fps (854×480) automaticamente
-- Usuário ainda pode mudar nas Configurações
-
-**Resultado:** travamento melhorou ✅
-
----
-
-### v2 — Redução de delay no celular
-**Problema:** delay absurdo de áudio e vídeo juntos no celular.
-
-**Causa raiz:** celular roteando pelo TURN server + jitter buffer conservador do navegador acumulando até 500ms desnecessários.
-
-**Fixes aplicados:**
-
-```js
-// 1. Configuração WebRTC mais eficiente
-config: {
-  sdpSemantics: 'unified-plan',   // protocolo moderno, melhor suporte mobile
-  bundlePolicy: 'max-bundle',     // áudio e vídeo no mesmo canal (menos overhead)
-  rtcpMuxPolicy: 'require'        // reduz conexões paralelas desnecessárias
-}
-
-// 2. Zerar jitter buffer de áudio
-if (receiver && receiver.jitterBufferTarget !== undefined) {
-  receiver.jitterBufferTarget = 0; // sai assim que chega, sem acumular
-}
-```
-
-**Commit:** `fix: reduce latency on mobile (jitter buffer, bundle policy, unified-plan)`
-
-**Resultado:** delay reduziu significativamente ✅
-
----
-
-## Limitações conhecidas no celular
-
-| Funcionalidade | Status |
-|---|---|
-| Voz (microfone/áudio) | ✅ Funciona |
-| Interface responsiva | ✅ Funciona |
-| Link de convite | ✅ Funciona |
-| Compartilhar tela | ❌ `getDisplayMedia` não suportado no mobile |
-| Escolher saída de áudio | ❌ `setSinkId` não funciona no iOS Safari |
-| iOS Safari geral | ⚠️ Funciona mas com restrições de autoplay |
-| Melhor experiência mobile | ✅ Android + Chrome |
-
----
-
-## Próximos passos em aberto
-
-- [ ] Opção B de controle de qualidade: espectador pede pro transmissor baixar o bitrate via `dataConn`
-- [ ] Domínio próprio (ex: `nexus.com.br`) para URL mais limpa
-- [ ] Aviso no celular sobre limitação de compartilhamento de tela
-
----
-
-*Última atualização: agosto de 2026*
-
-
-## Frontend — 10 de novembro de 2026
-
-- Identidade visual refeita em preto, grafite e prata; Nexus como nome provisório.
-- Símbolo próprio em SVG e ícones vetoriais no lugar de emojis.
-- Início com fluxos separados para criar sala e entrar por ID ou link.
-- Navegação lateral, trilho compacto no tablet e navegação inferior no celular.
-- Perfil com diálogo, prévia, cancelamento, salvamento e três monogramas provisórios.
-- Catálogo preparado para receber as artes de perfil fornecidas pelo usuário.
-- Configurações separadas em áudio/tela e aparência, mantendo os dispositivos e fundos existentes.
-- Entrada e saída de telas, diálogos e participantes; estados de hover e preferência de movimento reduzido.
-- Foco, navegação de abas por teclado, nomes acessíveis e estados dos controles.
-- Correção do ciclo de sair e criar outra sala: recriação do áudio e limpeza de faixas anteriores.
-- 12 testes de interface e mídia simulada aprovados.
-- Conferência no navegador entre 320 e 1440 px, sem rolagem horizontal.
-- Comunicação real entre dois dispositivos não faz parte da validação visual com mídia sintética.
-
-Pendente: nome definitivo e arquivos dos ícones de perfil.
+Pendentes de definição: nome definitivo e arquivos dos ícones de perfil. Próxima etapa estrutural: backend de autenticação e mensagens, persistência e infraestrutura de mídia para disponibilidade contínua. Validação física entre dispositivos e navegadores distintos permanece necessária.

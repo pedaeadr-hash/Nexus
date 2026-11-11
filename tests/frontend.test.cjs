@@ -311,6 +311,20 @@ test('a late screen-share stop after leaving is harmless', async () => {
   assert.equal(page.run('localStream'), null);
 });
 
+test('muting the microphone preserves shared-tab audio on the mixed outgoing track', async () => {
+  const page = app();
+  await page.run('enterRoom()');
+  await page.run('toggleScreen()');
+  assert.equal(page.run('screenShareAudioTrack.readyState'), 'live');
+  page.run('toggleMic()');
+  assert.equal(page.run('micGainNode.gain.value'), 0);
+  assert.equal(page.run('sentAudioTrack.enabled'), true);
+  assert.equal(page.run('screenShareAudioTrack.readyState'), 'live');
+  page.run('stopScreenShare(); toggleMic()');
+  assert.equal(page.run('micOn'), true);
+  assert.equal(page.run('micGainNode.gain.value'), page.run('micGainValue'));
+});
+
 test('rapid navigation cannot reveal a stale outgoing view', async () => {
   const page = app({ reducedMotion: false });
   page.run("setView('settings'); setView('room'); setView('home')");

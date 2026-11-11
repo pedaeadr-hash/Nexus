@@ -207,3 +207,15 @@ test('history pagination includes messages from a member who has left', async t 
   await until(() => c.store.messages(key).length === 1);
   assert.equal(c.store.messages(key)[0].name, 'Bia');
 });
+
+test('a member returning after the host closed a space removes the stale membership', async t => {
+  const env = await setup(['Ana', 'Bia']); t.after(env.destroy); const [a, b] = env.people;
+  const space = a.client.createSpace('Temporário'); await join(a, b, space);
+  env.network.offline(b.client); b.client.destroy();
+  a.client.closeSpace(space.id);
+  assert.ok(b.store.state.spaces[space.id]);
+  b.client = new Client({ store: b.store, identity: b.identity, person: () => b.person, autoReconnect: false, connectionTimeout: 500 });
+  env.network.online(b.client);
+  await until(() => !b.store.state.spaces[space.id], 'closed space cleanup');
+  assert.equal(b.client.voice, null);
+});
