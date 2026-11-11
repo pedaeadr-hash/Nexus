@@ -100,7 +100,7 @@ function speakingLoop() {
     if (id === 'local' && entry.isLocalMic) {
       const pct = Math.min(100, Math.round((level / 0.5) * 100));
       const fill = document.getElementById('micMeterFill');
-      if (fill) fill.style.width = pct + '%';
+      if (fill) { fill.style.width = pct + '%'; fill.parentElement.setAttribute('aria-valuenow', String(pct)); }
     }
     const shouldSpeak = level > SPEAKING_THRESHOLD && (id !== 'local' || micOn);
     if (shouldSpeak !== entry.speaking) {
@@ -246,22 +246,42 @@ function renderBgGrid() {
 applyBackground(bgId, false);
 
 /* ---------- nav ---------- */
+let viewAnimation = null;
+let viewRevision = 0;
 function setView(view) {
   const target = document.getElementById('view-' + view);
   if (!target) return;
-  document.querySelectorAll('.view').forEach(section => {
-    section.classList.toggle('active', section === target);
-    section.inert = section !== target;
-  });
-  document.querySelectorAll('.navitem').forEach(button => {
-    const active = button.dataset.view === view;
-    button.classList.toggle('active', active);
-    if (active) button.setAttribute('aria-current', 'page');
-    else button.removeAttribute('aria-current');
-  });
-  document.getElementById('pageTitle').textContent = { home: 'Início', room: 'Sua sala', settings: 'Configurações' }[view];
-  if (typeof syncRoomUI === 'function') syncRoomUI();
-  target.querySelector('h1')?.focus({ preventScroll: true });
+  const previous = document.querySelector('.view.active');
+  const revision = ++viewRevision;
+  viewAnimation?.cancel();
+  viewAnimation = null;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const activate = () => {
+    if (revision !== viewRevision) return;
+    document.querySelectorAll('.view').forEach(section => {
+      section.classList.toggle('active', section === target);
+      section.inert = section !== target;
+    });
+    document.querySelectorAll('.navitem').forEach(button => {
+      const active = button.dataset.view === view;
+      button.classList.toggle('active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    document.getElementById('pageTitle').textContent = { home: 'Início', room: 'Sua sala', settings: 'Configurações' }[view];
+    if (typeof syncRoomUI === 'function') syncRoomUI();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    target.querySelector('h1')?.focus({ preventScroll: true });
+    if (!reduced && target.animate && previous !== target) {
+      viewAnimation = target.animate([{ opacity: 0, transform: 'translateY(9px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
+      viewAnimation.finished.catch(() => {});
+    }
+  };
+  if (previous && previous !== target && !reduced && previous.animate) {
+    viewAnimation = previous.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-5px)' }], { duration: 130, easing: 'ease-out', fill: 'forwards' });
+    const outgoing = viewAnimation;
+    outgoing.finished.then(() => { outgoing.cancel(); activate(); }).catch(() => {});
+  } else activate();
 }
 
 /* ---------- peer setup ---------- */
@@ -386,8 +406,8 @@ async function updateDeviceHintForPermission(mics) {
   if (!hint) return;
   const hasRealLabels = mics.some(d => d.label);
   if (hasRealLabels) {
-    hint.style.color = '#8891a3';
-    hint.textContent = 'Dispositivos liberados! Fale perto do microfone pra ver a barra verde se mexer.';
+    hint.style.color = '';
+    hint.textContent = 'Microfone disponível. Fale para acompanhar o nível de entrada.';
     return;
   }
   let stateMsg = 'ainda não foi liberada';
@@ -397,9 +417,9 @@ async function updateDeviceHintForPermission(mics) {
       if (status.state === 'denied') stateMsg = 'foi negada';
     }
   } catch (e) { /* Firefox e alguns navegadores não suportam consultar essa permissão */ }
-  hint.style.color = '#ffcd3c';
+  hint.style.color = '';
   hint.textContent = mics.length <= 1
-    ? 'Só aparece "Microfone 1" genérico porque a permissão de microfone ' + stateMsg + ' pra este site. Clique em "ativar microfone" acima e, quando o navegador perguntar, escolha Permitir. Se não aparecer nenhum pop-up, clique no cadeado/ícone ao lado do endereço do site e libere o microfone manualmente.'
+    ? 'A permissão de microfone ' + stateMsg + '. Use “Ativar microfone” para escolher seu dispositivo.'
     : hint.textContent;
 }
 async function populateSpeakerSelect() {
@@ -504,7 +524,7 @@ async function getLocalStream() {
 /* ---------- ativar dispositivos / testar antes mesmo de entrar numa sala ---------- */
 async function activateDevices() {
   const btn = document.getElementById('activateDevicesBtn');
-  btn.disabled = true; btn.textContent = 'ativando...';
+  btn.disabled = true; btn.textContent = 'Ativando…';
   try {
     const testStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
@@ -521,13 +541,13 @@ async function activateDevices() {
     }
     await populateMicSelect();
     await populateSpeakerSelect();
-    btn.textContent = 'dispositivos ativados';
+    btn.textContent = 'Microfone ativado';
   } catch (e) {
     statusMsg(micErrorMessage(e));
     const hint = document.getElementById('deviceStatusHint');
-    hint.style.color = '#fbbf24';
+    hint.style.color = 'var(--danger)';
     hint.textContent = micErrorMessage(e);
-    btn.textContent = 'ativar microfone e ver dispositivos';
+    btn.textContent = 'Ativar microfone';
   }
   btn.disabled = false;
 }
@@ -665,7 +685,17 @@ function ensureTile(id, { name, avatar, isLocal } = {}) {
   tiles.set(id, obj);
   return obj;
 }
-function removeTile(id) { const t = tiles.get(id); if (t) { t.wrap.remove(); tiles.delete(id); } }
+function removeTile(id) {
+  const tile = tiles.get(id);
+  if (!tile) return;
+  tiles.delete(id);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !tile.wrap.animate) {
+    tile.wrap.remove();
+    return;
+  }
+  tile.wrap.classList.add('leaving');
+  setTimeout(() => tile.wrap.remove(), 210);
+}
 function updateTileLabel(id, name, avatar) {
   const t = tiles.get(id); if (!t) return;
   if (name !== undefined) t.tag.textContent = name + (t.isLocal ? ' (você)' : '');
@@ -879,19 +909,26 @@ async function enterRoom() {
   setView('room');
 }
 function leaveRoom() {
+  inRoom = false;
+  mySharing = false;
   participants.forEach((p, id) => { if (p.call) p.call.close(); if (p.dataConn) p.dataConn.close(); detachSpeakingAnalyser(id); });
   participants.clear();
   tiles.forEach(t => t.wrap.remove());
   tiles.clear();
   const thumbrow = document.getElementById('thumbrow'); if (thumbrow) thumbrow.remove();
   document.getElementById('videos').classList.remove('has-spotlight');
-  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (localStream) { localStream.getTracks().forEach(t => { t.onended = null; t.stop(); }); localStream = null; }
   if (rawMicStream) { rawMicStream.getTracks().forEach(t => t.stop()); rawMicStream = null; }
   if (screenShareAudioTrack) { screenShareAudioTrack.stop(); screenShareAudioTrack = null; }
+  if (blankVideoTrack) { blankVideoTrack.stop(); blankVideoTrack = null; }
+  [micSourceNode, micGainNode, screenSourceNode, screenGainNode].forEach(node => { try { node?.disconnect(); } catch (_) {} });
+  micSourceNode = micGainNode = screenSourceNode = screenGainNode = null;
+  mixDestNode = sentAudioTrack = null;
   detachSpeakingAnalyser('local');
-  mySharing = false; inRoom = false; deafened = false;
+  micOn = true; deafened = false;
   document.getElementById('shareBtn').classList.remove('sharing');
   document.getElementById('deafenBtn').classList.remove('deafened');
+  document.getElementById('micBtn').classList.remove('off');
   const meterFill = document.getElementById('micMeterFill'); if (meterFill) meterFill.style.width = '0%';
   updateConnBadge('', 'conectando...');
   setView('home');
@@ -995,8 +1032,9 @@ async function toggleScreen() {
   }
 }
 function stopScreenShare() {
+  if (!localStream || !mySharing) return;
   const oldTrack = localStream.getVideoTracks()[0];
-  if (oldTrack) { localStream.removeTrack(oldTrack); oldTrack.stop(); }
+  if (oldTrack) { oldTrack.onended = null; localStream.removeTrack(oldTrack); oldTrack.stop(); }
   localStream.addTrack(blankVideoTrack);
   if (screenShareAudioTrack) {
     disconnectScreenAudioFromMix();

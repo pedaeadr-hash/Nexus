@@ -50,20 +50,20 @@
     <div class="sidebar-label">SEU ESPAÇO</div>
     <nav class="navlist" aria-label="Navegação principal">
       <button class="navitem active" data-view="home" onclick="setView('home')" aria-current="page" aria-label="Início">
-        <svg class="icon"><use href="#i-home"/></svg><span>Início</span><span class="nav-index" aria-hidden="true">01</span>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span>Início</span><span class="nav-index" aria-hidden="true">01</span>
       </button>
       <button class="navitem" data-view="room" onclick="setView('room')" aria-label="Sua sala">
-        <svg class="icon"><use href="#i-room"/></svg><span>Sua sala</span><span class="room-indicator" id="roomIndicator" hidden aria-label="Sala ativa"></span>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-room"/></svg><span>Sua sala</span><span class="room-indicator" id="roomIndicator" hidden aria-label="Sala ativa"></span>
       </button>
       <button class="navitem" data-view="settings" onclick="setView('settings')" aria-label="Configurações">
-        <svg class="icon"><use href="#i-settings"/></svg><span>Configurações</span>
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span>Configurações</span>
       </button>
     </nav>
     <div class="sidebar-note"><span class="tiny-cross" aria-hidden="true">+</span><p>Um lugar para<br>ficar por perto.</p><span class="note-coordinate">SEM DISTÂNCIA.</span></div>
     <div class="sidebar-footer">
       <div class="myid-box">
         <span class="myid-label">SEU ID</span>
-        <div class="myid-row"><span id="sidebarMyid">Conectando…</span><button class="icon-button" onclick="copyId()" title="Copiar seu ID" aria-label="Copiar seu ID"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+        <div class="myid-row"><span id="sidebarMyid">Conectando…</span><button class="icon-button" onclick="copyId()" title="Copiar seu ID" aria-label="Copiar seu ID"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button></div>
       </div>
       <button class="profile-card" onclick="openProfile()" aria-label="Editar seu perfil">
         <span class="avatar-picker" id="profileAvatar" aria-hidden="true"></span>
@@ -75,7 +75,7 @@
 
   <main id="mainarea" tabindex="-1">
     <header class="topbar">
-      <div class="breadcrumb"><span class="breadcrumb-root">Seu espaço</span><svg class="icon"><use href="#i-chevron"/></svg><span id="pageTitle">Início</span></div>
+      <div class="breadcrumb"><span class="breadcrumb-root">Seu espaço</span><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-chevron"/></svg><span id="pageTitle">Início</span></div>
       <button class="network-status" id="networkStatus" onclick="retryConnection()" title="Verificar conexão"><span class="network-dot"></span><span id="networkText">Conectando</span><span class="connection-caption"> / DIRETO</span></button>
       <button class="mobile-profile icon-button" onclick="openProfile()" aria-label="Editar seu perfil"><span id="mobileAvatar" aria-hidden="true"></span></button>
     </header>
@@ -117,18 +117,18 @@
 
         <div class="entry-panel">
           <div class="entry-tabs" role="tablist" aria-label="Como entrar">
-            <button id="tab-create" class="entry-tab active" role="tab" aria-selected="true" aria-controls="entryForm" onclick="setEntryMode('create')"><svg class="icon"><use href="#i-plus"/></svg>Criar sala</button>
-            <button id="tab-join" class="entry-tab" role="tab" aria-selected="false" aria-controls="entryForm" tabindex="-1" onclick="setEntryMode('join')"><svg class="icon"><use href="#i-link"/></svg>Tenho um convite</button>
+            <button id="tab-create" class="entry-tab active" role="tab" aria-selected="true" aria-controls="entryForm" onclick="setEntryMode('create')"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>Criar sala</button>
+            <button id="tab-join" class="entry-tab" role="tab" aria-selected="false" aria-controls="entryForm" tabindex="-1" onclick="setEntryMode('join')"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg>Tenho um convite</button>
           </div>
           <form id="entryForm" role="tabpanel" aria-labelledby="tab-create" onsubmit="event.preventDefault(); submitRoom()">
             <div class="entry-heading"><span class="eyebrow" id="entryEyebrow">A CONVERSA É SUA</span><h2 id="entryTitle">Abre a sala.<br>Chama a sua gente.</h2><p id="entryDescription">Um espaço só de vocês, a um clique de distância.</p></div>
-            <div class="entry-profile"><span id="homeAvatar" aria-hidden="true"></span><span>Você entra como <b id="homeName">Visitante</b></span><button type="button" class="text-button" onclick="openProfile()" aria-label="Editar seu perfil">Editar<svg class="icon"><use href="#i-diagonal"/></svg></button></div>
-            <div class="join-field" id="joinField" hidden><label for="roomId">ID da sala ou link de convite</label><div class="input-with-icon"><svg class="icon"><use href="#i-link"/></svg><input id="roomId" type="text" autocomplete="off" spellcheck="false" placeholder="Cole seu convite aqui" aria-describedby="joinHelp"></div><p class="hint" id="joinHelp">Peça o convite para alguém que já está na sala.</p></div>
-            <button class="primary entry-submit" id="enterRoomBtn" type="submit"><span id="entryButtonLabel">Criar uma sala</span><svg class="icon"><use href="#i-arrow"/></svg></button>
-            <div class="entry-assurance"><svg class="icon"><use href="#i-lock"/></svg><span>Sem cadastro. A conversa fica entre vocês.</span></div>
+            <div class="entry-profile"><span id="homeAvatar" aria-hidden="true"></span><span>Você entra como <b id="homeName">Visitante</b></span><button type="button" class="text-button" onclick="openProfile()" aria-label="Editar seu perfil">Editar<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-diagonal"/></svg></button></div>
+            <div class="join-field" id="joinField" hidden><label for="roomId">ID da sala ou link de convite</label><div class="input-with-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><input id="roomId" type="text" autocomplete="off" spellcheck="false" placeholder="Cole seu convite aqui" aria-describedby="joinHelp"></div><p class="hint" id="joinHelp">Peça o convite para alguém que já está na sala.</p></div>
+            <button class="primary entry-submit" id="enterRoomBtn" type="submit"><span id="entryButtonLabel">Criar uma sala</span><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button>
+            <div class="entry-assurance"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg><span>Sem cadastro. A conversa fica entre vocês.</span></div>
           </form>
-          <div class="session-notice" id="sessionNotice" hidden><span class="network-dot"></span><span>Sua sala está aberta.</span><button class="text-button" onclick="setView('room')">Voltar<svg class="icon"><use href="#i-arrow"/></svg></button></div>
-          <div class="entry-footnote"><span class="entry-note-index">/ 01</span><p>O microfone só é ativado<br>quando você entra na sala.</p><svg class="icon"><use href="#i-mic"/></svg></div>
+          <div class="session-notice" id="sessionNotice" hidden><span class="network-dot"></span><span>Sua sala está aberta.</span><button class="text-button" onclick="setView('room')">Voltar<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></div>
+          <div class="entry-footnote"><span class="entry-note-index">/ 01</span><p>Você tem o controle<br>do seu microfone, sempre.</p><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mic"/></svg></div>
         </div>
       </div>
       <div class="getting-started" aria-label="Como funciona">
@@ -141,21 +141,21 @@
 
     <section id="view-room" class="view" aria-labelledby="roomHeading" inert>
       <div class="page-heading compact"><div><span class="eyebrow">EM BOA COMPANHIA</span><h1 id="roomHeading" tabindex="-1">Sua sala<span class="quiet-dot">.</span></h1></div><span class="room-caption">Um espaço só de vocês.</span></div>
-      <div class="room-empty" id="roomEmpty"><div class="empty-symbol"><svg class="icon"><use href="#i-room"/></svg></div><span class="eyebrow">TUDO COMEÇA COM UM OI</span><h2>Tem lugar pra todo mundo.</h2><p>Crie uma sala e mande o convite.<br>Sua próxima boa conversa começa aqui.</p><button class="primary" onclick="setView('home'); setEntryMode('create')">Criar uma sala<svg class="icon"><use href="#i-arrow"/></svg></button><button class="text-button" onclick="setView('home'); setEntryMode('join')">Já tenho um convite</button></div>
+      <div class="room-empty" id="roomEmpty"><div class="empty-symbol"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-room"/></svg></div><span class="eyebrow">TUDO COMEÇA COM UM OI</span><h2>Tem lugar pra todo mundo.</h2><p>Crie uma sala e mande o convite.<br>Sua próxima boa conversa começa aqui.</p><button class="primary" onclick="setView('home'); setEntryMode('create')">Criar uma sala<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button><button class="text-button" onclick="setView('home'); setEntryMode('join')">Já tenho um convite</button></div>
       <div class="room-stage" id="roomStage" hidden>
         <div class="room-header"><span id="roomCount">1 pessoa na sala</span><span class="conn-badge" id="connBadge"><span class="conn-dot" id="connDot"></span><span id="connText">Conectando…</span></span></div>
         <div id="videos" aria-label="Participantes da sala"></div>
-        <div class="room-bottom"><div class="room-hint"><svg class="icon"><use href="#i-headphones"/></svg><span>Chega mais.<br><b>Você está em casa.</b></span></div>
+        <div class="room-bottom"><div class="room-hint"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-headphones"/></svg><span>Chega mais.<br><b>Você está em casa.</b></span></div>
           <div id="bar" role="toolbar" aria-label="Controles da chamada">
-            <button id="micBtn" onclick="toggleMic()" title="Desativar microfone (M)" aria-label="Desativar microfone" aria-pressed="false"><svg class="icon"><use href="#i-mic"/></svg></button>
-            <button id="deafenBtn" onclick="toggleDeafen()" title="Silenciar áudio recebido" aria-label="Silenciar áudio recebido" aria-pressed="false"><svg class="icon"><use href="#i-headphones"/></svg></button>
+            <button id="micBtn" onclick="toggleMic()" title="Desativar microfone (M)" aria-label="Desativar microfone" aria-pressed="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mic"/></svg></button>
+            <button id="deafenBtn" onclick="toggleDeafen()" title="Silenciar áudio recebido" aria-label="Silenciar áudio recebido" aria-pressed="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-headphones"/></svg></button>
             <span class="bar-divider" aria-hidden="true"></span>
-            <button id="shareBtn" onclick="toggleScreen()" title="Compartilhar tela" aria-label="Compartilhar tela" aria-pressed="false"><svg class="icon"><use href="#i-screen"/></svg></button>
-            <button id="hangup" onclick="leaveRoom()" title="Sair da sala" aria-label="Sair da sala"><svg class="icon"><use href="#i-leave"/></svg></button>
+            <button id="shareBtn" onclick="toggleScreen()" title="Compartilhar tela" aria-label="Compartilhar tela" aria-pressed="false"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-screen"/></svg></button>
+            <button id="hangup" onclick="leaveRoom()" title="Sair da sala" aria-label="Sair da sala"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-leave"/></svg></button>
           </div>
-          <button class="secondary room-invite" onclick="copyInviteLink()"><svg class="icon"><use href="#i-link"/></svg><span>Convidar</span></button>
+          <button class="secondary room-invite" onclick="copyInviteLink()" aria-label="Copiar convite da sala"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>Convidar</span></button>
         </div>
-        <div id="inviteBox" class="invite-box" style="display:none"><label for="inviteLink">A sala fica melhor com companhia</label><div class="invite-row"><div class="input-with-icon"><svg class="icon"><use href="#i-link"/></svg><input id="inviteLink" type="text" readonly aria-label="Link de convite"></div><button class="secondary" onclick="copyInviteLink()"><svg class="icon"><use href="#i-copy"/></svg>Copiar link</button></div></div>
+        <div id="inviteBox" class="invite-box" style="display:none"><label for="inviteLink">A sala fica melhor com companhia</label><div class="invite-row"><div class="input-with-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><input id="inviteLink" type="text" readonly aria-label="Link de convite"></div><button class="secondary" onclick="copyInviteLink()"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg>Copiar link</button></div></div>
       </div>
     </section>
 
@@ -164,27 +164,27 @@
       <div class="settings-tabs" role="tablist" aria-label="Preferências">
         <button class="settings-tab active" id="tab-audio" role="tab" aria-selected="true" aria-controls="settings-audio" onclick="setSettingsTab('audio')">Áudio e tela</button>
         <button class="settings-tab" id="tab-appearance" role="tab" aria-selected="false" aria-controls="settings-appearance" tabindex="-1" onclick="setSettingsTab('appearance')">Aparência</button>
-        <button class="text-button settings-profile" onclick="openProfile()"><svg class="icon"><use href="#i-user"/></svg>Editar perfil</button>
+        <button class="text-button settings-profile" onclick="openProfile()"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-user"/></svg>Editar perfil</button>
       </div>
       <div id="settings-audio" class="settings-content" role="tabpanel" aria-labelledby="tab-audio">
-        <section class="settings-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-mic"/></svg></span><div><h2>Seu áudio</h2><p>Uma boa conversa começa por aqui.</p></div></div>
+        <section class="settings-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mic"/></svg></span><div><h2>Seu áudio</h2><p>Uma boa conversa começa por aqui.</p></div></div>
           <button class="secondary device-activate" id="activateDevicesBtn" onclick="activateDevices()">Ativar microfone</button>
           <p class="hint device-hint" id="deviceStatusHint">Permita o acesso para escolher e testar seu microfone.</p>
           <div class="field-group"><label for="micSelect">Microfone</label><select id="micSelect" onchange="onMicChange()"><option value="">Padrão do sistema</option></select><div class="meter" role="meter" aria-label="Nível do microfone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="meter-fill" id="micMeterFill"></div></div><span class="hint">Fale para testar o nível de entrada.</span></div>
           <div class="field-group range-group"><div class="label-row"><label for="inputVolume">Volume de entrada</label><output id="inputVolumeValue" for="inputVolume">100%</output></div><input id="inputVolume" type="range" min="0" max="200" value="100" oninput="onInputVolumeChange(); updateRange(this)"><div class="range-scale"><span>0%</span><span>200%</span></div></div>
-          <div class="field-group"><div class="label-row"><label for="speakerSelect">Saída de áudio</label><button class="text-button" onclick="testSpeaker()"><svg class="icon"><use href="#i-volume"/></svg>Testar</button></div><select id="speakerSelect" onchange="onSpeakerChange()"><option value="">Padrão do sistema</option></select><p class="hint" id="speakerHint">Escolha onde ouvir sua chamada.</p></div>
+          <div class="field-group"><div class="label-row"><label for="speakerSelect">Saída de áudio</label><button class="text-button" onclick="testSpeaker()"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-volume"/></svg>Testar</button></div><select id="speakerSelect" onchange="onSpeakerChange()"><option value="">Padrão do sistema</option></select><p class="hint" id="speakerHint">Escolha onde ouvir sua chamada.</p></div>
           <div class="field-group range-group"><div class="label-row"><label for="outputVolume">Volume de saída</label><output id="outputVolumeValue" for="outputVolume">100%</output></div><input id="outputVolume" type="range" min="0" max="100" value="100" oninput="onOutputVolumeChange(); updateRange(this)"><div class="range-scale"><span>0%</span><span>100%</span></div></div>
         </section>
-        <section class="settings-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-screen"/></svg></span><div><h2>Sua transmissão</h2><p>Compartilhe o que está acontecendo.</p></div></div>
-          <div class="screen-preview" aria-hidden="true"><div class="preview-window"><span></span><span></span><span></span><svg class="icon"><use href="#i-screen"/></svg></div><span>UM OUTRO PONTO DE VISTA.</span></div>
+        <section class="settings-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-screen"/></svg></span><div><h2>Sua transmissão</h2><p>Compartilhe o que está acontecendo.</p></div></div>
+          <div class="screen-preview" aria-hidden="true"><div class="preview-window"><span></span><span></span><span></span><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-screen"/></svg></div><span>UM OUTRO PONTO DE VISTA.</span></div>
           <div class="field-group"><label for="screenQualitySelect">Qualidade da tela</label><select id="screenQualitySelect" onchange="onScreenQualityChange()"><option value="fhd60">Full HD · 60 fps</option><option value="fhd30">Full HD · 30 fps</option><option value="hd60">HD · 60 fps</option><option value="hd30">HD · 30 fps</option><option value="sd30">Essencial · 30 fps</option></select><p class="hint">Uma qualidade menor ajuda em conexões mais lentas.</p></div>
           <label class="check-row" for="systemAudioCheck"><span><b>Incluir áudio na transmissão</b><span>Ao compartilhar uma aba, o som vai junto.</span></span><input type="checkbox" id="systemAudioCheck" checked onchange="onSystemAudioCheckChange()"><span class="switch" aria-hidden="true"></span></label>
           <p class="hint screen-note" id="screenSupportHint">Para evitar eco, o áudio é desativado ao transmitir uma janela ou a tela inteira.</p>
         </section>
       </div>
       <div id="settings-appearance" class="settings-content" role="tabpanel" aria-labelledby="tab-appearance" hidden>
-        <section class="settings-panel appearance-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-home"/></svg></span><div><h2>O cenário da conversa</h2><p>Escolha o plano de fundo do seu espaço.</p></div></div><div class="bg-grid" id="bgGrid" aria-label="Planos de fundo"></div><p class="hint">Sua escolha fica salva neste navegador.</p></section>
-        <section class="settings-panel profile-promo"><div class="promo-avatar" id="settingsAvatar" aria-hidden="true"></div><span class="eyebrow">SUA PRESENÇA, SEU JEITO</span><h2>Um pouco mais você.</h2><p>Ajuste seu nome e escolha<br>o acabamento do seu perfil.</p><button class="secondary" onclick="openProfile()">Personalizar perfil<svg class="icon"><use href="#i-diagonal"/></svg></button></section>
+        <section class="settings-panel appearance-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-home"/></svg></span><div><h2>O cenário da conversa</h2><p>Escolha o plano de fundo do seu espaço.</p></div></div><div class="bg-grid" id="bgGrid" aria-label="Planos de fundo"></div><p class="hint">Sua escolha fica salva neste navegador.</p></section>
+        <section class="settings-panel profile-promo"><div class="promo-avatar" id="settingsAvatar" aria-hidden="true"></div><span class="eyebrow">SUA PRESENÇA, SEU JEITO</span><h2>Um pouco mais você.</h2><p>Ajuste seu nome e escolha<br>o acabamento do seu perfil.</p><button class="secondary" onclick="openProfile()">Personalizar perfil<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-diagonal"/></svg></button></section>
       </div>
     </section>
 
@@ -196,18 +196,18 @@
 
 <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileTitle">
   <form id="profileForm" onsubmit="event.preventDefault(); saveProfileDialog()">
-    <div class="dialog-topline"><span class="eyebrow">IDENTIDADE / 001</span><button type="button" class="icon-button" onclick="closeProfile()" aria-label="Fechar perfil"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div class="dialog-topline"><span class="eyebrow">IDENTIDADE / 001</span><button type="button" class="icon-button" onclick="closeProfile()" aria-label="Fechar perfil"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button></div>
     <div class="profile-display"><span class="profile-orbit" aria-hidden="true"></span><span id="profilePreview" aria-hidden="true"></span><span class="profile-serial">PERSONAL SPACE ©</span></div>
     <h2 id="profileTitle">Prazer, você.</h2><p class="dialog-description">Seu jeito de chegar na conversa.</p>
     <label for="profileName">Como podemos chamar você?</label><input id="profileName" type="text" maxlength="18" autocomplete="nickname" placeholder="Seu nome" required>
     <fieldset class="avatar-fieldset"><legend>Escolha seu acabamento</legend><div id="avatarOptions" class="avatar-options"></div></fieldset>
-    <div class="dialog-actions"><button type="button" class="secondary" onclick="closeProfile()">Cancelar</button><button type="submit" class="primary">Salvar perfil<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+    <div class="dialog-actions"><button type="button" class="secondary" onclick="closeProfile()">Cancelar</button><button type="submit" class="primary">Salvar perfil<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></div>
     <p class="dialog-footnote">Esse perfil fica salvo no seu navegador.</p>
   </form>
 </dialog>
 
 <dialog class="ring-overlay" id="ringOverlay" aria-labelledby="ringTitle">
-  <div class="ring-card"><span class="eyebrow">TEM GENTE CHEGANDO</span><div class="ring-avatar-wrap"><span class="ping"></span><span class="ping d2"></span><div class="avatar-circle"><svg class="icon"><use href="#i-phone"/></svg></div></div><h2 id="ringTitle">Bora conversar?</h2><p>Você recebeu um convite para uma chamada.</p><div class="actions"><button class="secondary" id="declineBtn" onclick="declineIncoming()">Agora não</button><button class="primary" id="acceptBtn" onclick="acceptIncoming()"><svg class="icon"><use href="#i-phone"/></svg>Atender</button></div></div>
+  <div class="ring-card"><span class="eyebrow">TEM GENTE CHEGANDO</span><div class="ring-avatar-wrap"><span class="ping"></span><span class="ping d2"></span><div class="avatar-circle"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg></div></div><h2 id="ringTitle">Bora conversar?</h2><p>Você recebeu um convite para uma chamada.</p><div class="actions"><button class="secondary" id="declineBtn" onclick="declineIncoming()">Agora não</button><button class="primary" id="acceptBtn" onclick="acceptIncoming()"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-phone"/></svg>Atender</button></div></div>
 </dialog>
 <noscript><div class="noscript-message">Ative o JavaScript no navegador para entrar em uma sala.</div></noscript>
 </body>

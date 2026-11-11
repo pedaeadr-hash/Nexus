@@ -5,6 +5,7 @@ let draftAvatar = profile.avatar;
 let profileTrigger = null;
 
 function setEntryMode(mode) {
+  const changed = entryMode !== (mode === 'join' ? 'join' : 'create');
   entryMode = mode === 'join' ? 'join' : 'create';
   const joining = entryMode === 'join';
   document.getElementById('joinField').hidden = !joining;
@@ -23,6 +24,7 @@ function setEntryMode(mode) {
     tab.setAttribute('aria-selected', String(selected));
     tab.tabIndex = selected ? 0 : -1;
   });
+  if (changed) animateContent(document.querySelector('.entry-heading'));
 }
 
 function roomIdFromInput(value) {
@@ -135,9 +137,23 @@ function updateProfilePreview() {
   document.querySelectorAll('.avatar-sample').forEach(sample => renderAvatar(sample, sample.dataset.avatar, name));
 }
 
+function animateContent(element) {
+  if (!element?.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  element.animate([{ opacity: .3, transform: 'translateY(5px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 350, easing: 'cubic-bezier(.22,1,.36,1)' });
+}
+
 function closeProfile() {
-  document.getElementById('profileDialog').close();
-  if (profileTrigger?.isConnected) profileTrigger.focus({ preventScroll: true });
+  const dialog = document.getElementById('profileDialog');
+  const restoreFocus = () => { if (profileTrigger?.isConnected) profileTrigger.focus({ preventScroll: true }); };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    dialog.close();
+    restoreFocus();
+    return;
+  }
+  if (dialog.classList.contains('is-closing')) return;
+  dialog.classList.add('is-closing');
+  const finish = () => { dialog.close(); dialog.classList.remove('is-closing'); restoreFocus(); };
+  setTimeout(finish, 170);
 }
 
 function saveProfileDialog() {
