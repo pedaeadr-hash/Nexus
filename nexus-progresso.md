@@ -130,3 +130,22 @@ if (receiver && receiver.jitterBufferTarget !== undefined) {
 ---
 
 *Última atualização: agosto de 2026*
+
+
+## Frontend — 10 de novembro de 2026
+
+- Identidade visual refeita em preto, grafite e prata; Nexus como nome provisório.
+- Símbolo próprio em SVG e ícones vetoriais no lugar de emojis.
+- Início com fluxos separados para criar sala e entrar por ID ou link.
+- Navegação lateral, trilho compacto no tablet e navegação inferior no celular.
+- Perfil com diálogo, prévia, cancelamento, salvamento e três monogramas provisórios.
+- Catálogo preparado para receber as artes de perfil fornecidas pelo usuário.
+- Configurações separadas em áudio/tela e aparência, mantendo os dispositivos e fundos existentes.
+- Entrada e saída de telas, diálogos e participantes; estados de hover e preferência de movimento reduzido.
+- Foco, navegação de abas por teclado, nomes acessíveis e estados dos controles.
+- Correção do ciclo de sair e criar outra sala: recriação do áudio e limpeza de faixas anteriores.
+- 12 testes de interface e mídia simulada aprovados.
+- Conferência no navegador entre 320 e 1440 px, sem rolagem horizontal.
+- Comunicação real entre dois dispositivos não faz parte da validação visual com mídia sintética.
+
+Pendente: nome definitivo e arquivos dos ícones de perfil.
