@@ -192,6 +192,7 @@ function app({ saved, reducedMotion = true, connected = true } = {}) {
   });
   for (const filename of ['avatars.js', 'script.js', 'ui.js']) vm.runInContext(fs.readFileSync(path.join(root, filename), 'utf8'), context, { filename });
   const run = code => vm.runInContext(code, context);
+  run("initializePeer('test-peer')");
   if (connected) run("peer.listeners.open('test-peer')");
   return { run, document, storage, media, animations };
 }

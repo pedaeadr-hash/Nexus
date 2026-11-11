@@ -160,9 +160,13 @@ async function applyOutputToAudio(audio, isLocal) {
   }
 }
 function resumeAllRemoteAudio() {
+  if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
   tiles.forEach(t => {
     if (t.isLocal || !t.audio || !t.audio.srcObject || deafened) return;
-    applyOutputToAudio(t.audio, false).then(() => t.audio.play().catch(() => {}));
+    t.audio.muted = false;
+    t.audio.volume = Math.min(1, Math.max(0, outputVolumeValue));
+    t.audio.play().then(() => { const gate = document.getElementById('audioUnlock'); if (gate) gate.hidden = true; }).catch(() => { const gate = document.getElementById('audioUnlock'); if (gate) gate.hidden = false; });
+    applyOutputToAudio(t.audio, false);
   });
 }
 window.addEventListener('pointerdown', resumeAllRemoteAudio, { passive: true });
@@ -268,8 +272,10 @@ function setView(view) {
       if (active) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     });
-    document.getElementById('pageTitle').textContent = { home: 'Início', room: 'Sua sala', settings: 'Configurações' }[view];
+    document.getElementById('pageTitle').textContent = { home: 'Início', friends: 'Amigos', dm: 'Mensagens', spaces: 'Espaços', space: 'Seu espaço', room: 'Chamada', settings: 'Configurações' }[view] || 'Seu espaço';
+    document.body.dataset.view = view;
     if (typeof syncRoomUI === 'function') syncRoomUI();
+    window.community?.onView(view);
     window.scrollTo({ top: 0, behavior: 'instant' });
     target.querySelector('h1')?.focus({ preventScroll: true });
     if (!reduced && target.animate && previous !== target) {
@@ -289,13 +295,13 @@ function setView(view) {
 // Sem TURN, duas pessoas atrás de redes mais restritas (roteador de operadora, Wi-Fi
 // de empresa/faculdade, dupla-NAT etc.) muitas vezes não conseguem se conectar direto
 // e a chamada nunca fecha — isso é a causa mais comum de "a call não funciona".
-function initializePeer() {
+function initializePeer(peerId) {
 if (typeof Peer === 'undefined') {
   updateNetworkStatus('bad', 'Indisponível');
   statusMsg('Não foi possível carregar a conexão. Verifique sua internet e recarregue a página.');
   return;
 }
-peer = new Peer(undefined, {
+peer = new Peer(peerId, {
   config: {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
@@ -315,7 +321,8 @@ peer.on('open', id => {
   updateNetworkStatus('ok', 'Disponível');
   document.getElementById('sidebarMyid').textContent = id;
   updateInviteLink();
-  if (autoJoinRoomId) { document.getElementById('roomId').value = autoJoinRoomId; enterRoom(); autoJoinRoomId = null; }
+  window.community?.peerReady(peer);
+  if (autoJoinRoomId && !window.NexusSocial) { document.getElementById('roomId').value = autoJoinRoomId; enterRoom(); autoJoinRoomId = null; }
 });
 const PEER_ERROR_MESSAGES = {
   'peer-unavailable': 'Não encontrei ninguém com esse ID de sala. Confira se copiou certo ou se a pessoa ainda está na sala.',
@@ -326,24 +333,31 @@ const PEER_ERROR_MESSAGES = {
   'server-error': 'O servidor de sinalização teve um problema. Tente novamente em instantes.',
   'socket-error': 'Erro de conexão com o servidor de sinalização.',
   'socket-closed': 'A conexão com o servidor de sinalização caiu. Tentando reconectar...',
-  'unavailable-id': 'Esse ID já está em uso, gerando outro automaticamente...'
+  'unavailable-id': 'Seu perfil já está aberto em outra aba. Feche a outra aba e recarregue esta página.'
 };
 peer.on('error', err => {
+  if (err.type === 'peer-unavailable' && window.community?.client) return;
   statusMsg(PEER_ERROR_MESSAGES[err.type] || ('Erro: ' + err.type));
-  if (err.type === 'unavailable-id') { setTimeout(() => { peer.reconnect(); }, 500); }
+  if (err.type === 'unavailable-id') { updateNetworkStatus('bad', 'Perfil em outra aba'); }
   if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
     updateNetworkStatus('bad', 'Sem conexão');
     updateConnBadge('bad', 'sem conexão com o servidor');
   }
 });
 peer.on('disconnected', () => {
+  window.community?.client?.offline();
   updateNetworkStatus('bad', 'Reconectando');
   updateConnBadge('bad', 'reconectando...');
   setTimeout(() => { try { peer.reconnect(); } catch (e) {} }, 1000);
 });
-peer.on('close', () => { updateNetworkStatus('bad', 'Desconectado'); updateConnBadge('bad', 'desconectado'); });
+peer.on('close', () => { window.community?.client?.offline(); updateNetworkStatus('bad', 'Desconectado'); updateConnBadge('bad', 'desconectado'); });
 
 peer.on('call', incoming => {
+  if (window.community?.client) {
+    if (incoming.metadata?.nexusVoice === 1) window.community.receiveMedia(incoming).catch(() => incoming.close());
+    else incoming.close();
+    return;
+  }
   const id = incoming.peer;
   if (inRoom) {
     incoming.answer(localStream);
@@ -358,13 +372,18 @@ peer.on('call', incoming => {
 });
 
 peer.on('connection', dataConn => {
+  if (window.community?.client) {
+    if (dataConn.label === window.NexusSocial.LABEL) window.community.client.acceptConnection(dataConn);
+    else dataConn.close();
+    return;
+  }
   const id = dataConn.peer;
   if (!inRoom) { dataConn.close(); return; }
   if (participants.has(id)) { participants.get(id).dataConn = dataConn; wireDataConn(id, dataConn); }
   else { wireParticipant(id, peer.call(id, localStream), dataConn); }
 });
 }
-initializePeer();
+// The social application starts PeerJS after its stable identity is loaded.
 
 function updateNetworkStatus(state, text) {
   const indicator = document.getElementById('networkStatus');
@@ -585,8 +604,9 @@ document.getElementById('screenQualitySelect').value = profile.screenQuality;
 document.getElementById('systemAudioCheck').checked = profile.systemAudio;
 
 async function copyId() {
-  if (!myId) { statusMsg('Seu ID estará disponível assim que a conexão for estabelecida.'); return; }
-  try { await navigator.clipboard.writeText(myId); statusMsg('Seu ID foi copiado.'); }
+  const id = myId || window.community?.me();
+  if (!id) { statusMsg('Seu ID estará disponível assim que a conexão for estabelecida.'); return; }
+  try { await navigator.clipboard.writeText(id); statusMsg('Seu ID foi copiado.'); }
   catch (_) { statusMsg('Não foi possível copiar. Você pode selecionar seu ID na barra lateral.'); }
 }
 
@@ -610,6 +630,7 @@ function toggleDeafen() {
     if (t.audio) t.audio.muted = deafened;
   });
   syncCallControls();
+  window.community?.publishVoiceState();
 }
 
 /* ---------- link de convite (?room=SEU_ID) ---------- */
@@ -620,6 +641,7 @@ async function copyInviteLink() {
   catch (_) { input.focus(); input.select(); statusMsg('Selecione e copie o link de convite.'); }
 }
 function updateInviteLink() {
+  if (window.community?.client) { window.community.updateCallInvite(); return; }
   if (!myId) return;
   const url = new URL(location.href);
   url.search = ''; url.hash = '';
@@ -630,7 +652,7 @@ function updateInviteLink() {
 (function readRoomFromUrl() {
   const params = new URLSearchParams(location.search);
   const room = params.get('room');
-  if (room) { autoJoinRoomId = room; document.getElementById('roomId').value = room; statusMsg('Entrando na sala do link...'); }
+  if (room && !window.NexusSocial) { autoJoinRoomId = room; document.getElementById('roomId').value = room; statusMsg('Entrando na sala do link...'); }
 })();
 
 /* ---------- atalho de teclado: M alterna o microfone ---------- */
@@ -737,6 +759,7 @@ function toggleFullscreen(wrapId) {
 /* ---------- mesh (multi-pessoa) ---------- */
 function wireCall(id, call) {
   call.on('stream', async stream => {
+    if (participants.get(id)?.call !== call || !inRoom) return;
     const t = tiles.get(id) || ensureTile(id, participants.get(id) || {});
 
     // O vídeo remoto serve só para a imagem. A voz é reproduzida pelo <audio>.
@@ -749,7 +772,8 @@ function wireCall(id, call) {
     try {
       await t.audio.play();
     } catch (e) {
-      statusMsg('Clique uma vez na página para liberar o áudio da chamada.');
+      const gate = document.getElementById('audioUnlock');
+      if (gate && !deafened) gate.hidden = false;
     }
 
     try {
@@ -761,9 +785,9 @@ function wireCall(id, call) {
       statusMsg('A conexão com ' + (participants.get(id)?.name || 'o participante') + ' chegou sem áudio.');
     } else {
       audioTracks.forEach(track => {
-        track.onmute = () => statusMsg('O microfone de ' + (participants.get(id)?.name || 'o participante') + ' está mudo.');
+        track.onmute = () => { if (inRoom && participants.has(id)) updateConnBadge('', 'Aguardando áudio'); };
         track.onunmute = () => { if (!deafened) resumeAllRemoteAudio(); };
-        track.onended = () => statusMsg('O áudio de ' + (participants.get(id)?.name || 'o participante') + ' foi encerrado.');
+        track.onended = () => { if (inRoom && participants.has(id)) updateConnBadge('', 'Áudio encerrado'); };
       });
     }
 
@@ -796,8 +820,9 @@ function wireCall(id, call) {
       } catch (e) {}
     }
   });
-  call.on('close', () => removeParticipant(id));
+  call.on('close', () => { if (participants.get(id)?.call === call) removeParticipant(id); });
   call.on('error', err => {
+    if (participants.get(id)?.call !== call) return;
     statusMsg('Conexão com um participante caiu (' + (err && err.type || 'erro') + '). Removendo da sala.');
     removeParticipant(id);
   });
@@ -867,6 +892,7 @@ function removeParticipant(id) {
 
 /* ---------- ring (chamada avulsa fora de sala) ---------- */
 async function acceptIncoming() {
+  if (window.community?.client?.pendingCall) return window.community.acceptDMCall();
   if (!pendingCall) return;
   document.getElementById('ringOverlay').close();
   statusMsg('Conectando...');
@@ -883,6 +909,7 @@ async function acceptIncoming() {
   pendingCall = null;
 }
 function declineIncoming() {
+  if (window.community?.client?.pendingCall) { window.community.client.endCall('declined'); return; }
   if (pendingCall) pendingCall.close();
   pendingCall = null;
   document.getElementById('ringOverlay').close();
@@ -908,7 +935,8 @@ async function enterRoom() {
   statusMsg('');
   setView('room');
 }
-function leaveRoom() {
+function leaveRoom(options = {}) {
+  if (window.community?.client && !options.internal) { window.community.leaveVoice(); return; }
   inRoom = false;
   mySharing = false;
   participants.forEach((p, id) => { if (p.call) p.call.close(); if (p.dataConn) p.dataConn.close(); detachSpeakingAnalyser(id); });
@@ -931,18 +959,19 @@ function leaveRoom() {
   document.getElementById('micBtn').classList.remove('off');
   const meterFill = document.getElementById('micMeterFill'); if (meterFill) meterFill.style.width = '0%';
   updateConnBadge('', 'conectando...');
-  setView('home');
+  const audioUnlock = document.getElementById('audioUnlock'); if (audioUnlock) audioUnlock.hidden = true;
+  if (typeof syncRoomUI === 'function') syncRoomUI();
+  if (!options.quiet) setView('home');
 }
 
 /* ---------- controles ---------- */
 function toggleMic() {
   micOn = !micOn;
   if (micGainNode) micGainNode.gain.value = micOn ? micGainValue : 0;
-  if (localStream) {
-    localStream.getAudioTracks().forEach(track => { track.enabled = micOn; });
-  }
+  // The mixed outgoing track also carries shared-tab audio. Only mute micGainNode.
   document.getElementById('micBtn').classList.toggle('off', !micOn);
   syncCallControls();
+  window.community?.publishVoiceState();
 }
 
 function boostBitrate(sender, quality) {
@@ -959,14 +988,16 @@ function replaceVideoTrackEverywhere(track, quality) {
   participants.forEach(p => {
     if (p.call && p.call.peerConnection) {
       const sender = p.call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-      if (sender) { sender.replaceTrack(track); boostBitrate(sender, q); }
+      if (sender) { sender.replaceTrack(track).catch(() => statusMsg('Não foi possível atualizar a transmissão de um participante. Entre novamente na chamada para reconectar.')); boostBitrate(sender, q); }
     }
   });
 }
 function broadcastSharing(value) {
+  window.community?.publishVoiceState();
   participants.forEach(p => { if (p.dataConn && p.dataConn.open) p.dataConn.send({ type: 'sharing', value }); });
 }
 function broadcastProfile() {
+  window.community?.client?.updateProfile();
   participants.forEach(p => { if (p.dataConn && p.dataConn.open) p.dataConn.send({ type: 'profile', name: profile.name, avatar: profile.avatar, sharing: mySharing }); });
 }
 

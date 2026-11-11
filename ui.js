@@ -16,7 +16,7 @@ function setEntryMode(mode) {
   const title = document.getElementById('entryTitle');
   title.append(document.createTextNode(joining ? 'A sua gente' : 'Abre a sala.'), document.createElement('br'), document.createTextNode(joining ? 'está te esperando.' : 'Chama a sua gente.'));
   document.getElementById('entryDescription').textContent = joining ? 'Cole o convite e chegue mais. O papo já vai começar.' : 'Um espaço só de vocês, a um clique de distância.';
-  document.getElementById('entryButtonLabel').textContent = joining ? 'Entrar na sala' : 'Criar uma sala';
+  document.getElementById('entryButtonLabel').textContent = joining ? 'Entrar no espaço' : 'Criar um espaço';
   document.getElementById('entryForm').setAttribute('aria-labelledby', joining ? 'tab-join' : 'tab-create');
   document.querySelectorAll('.entry-tab').forEach(tab => {
     const selected = tab.id === 'tab-' + entryMode;
@@ -38,6 +38,7 @@ function roomIdFromInput(value) {
 }
 
 async function submitRoom() {
+  if (window.community) return window.community.submitHome();
   if (enteringRoom) return;
   if (inRoom) { setView('room'); return; }
   const input = document.getElementById('roomId');
@@ -72,9 +73,9 @@ function syncRoomUI() {
   document.getElementById('roomStage').hidden = !inRoom;
   document.getElementById('roomIndicator').hidden = !inRoom;
   document.getElementById('sessionNotice').hidden = !inRoom;
-  document.getElementById('entryForm').hidden = inRoom;
-  document.querySelector('.entry-tabs').hidden = inRoom;
-  document.querySelector('.entry-footnote').hidden = inRoom;
+  document.getElementById('entryForm').hidden = inRoom && !window.community;
+  document.querySelector('.entry-tabs').hidden = inRoom && !window.community;
+  document.querySelector('.entry-footnote').hidden = inRoom && !window.community;
   syncCallControls();
 }
 
@@ -91,6 +92,7 @@ function syncCallControls() {
   share.setAttribute('aria-pressed', String(mySharing));
   share.setAttribute('aria-label', mySharing ? 'Parar compartilhamento' : 'Compartilhar tela');
   share.title = share.getAttribute('aria-label');
+  window.community?.renderVoiceDock();
 }
 
 function openProfile() {
@@ -101,6 +103,8 @@ function openProfile() {
   const input = document.getElementById('profileName');
   input.value = profile.name;
   input.setCustomValidity('');
+  const presence = document.getElementById('profilePresence');
+  if (presence) presence.value = window.community?.store.state.preferences.presence || 'online';
   renderProfileOptions();
   updateProfilePreview();
   dialog.showModal();
@@ -166,6 +170,7 @@ function saveProfileDialog() {
   }
   profile.name = name.slice(0, 18);
   profile.avatar = normalizeAvatar(draftAvatar);
+  window.community?.savePresence();
   saveProfile();
   syncProfileUI();
   broadcastProfile();
@@ -174,8 +179,8 @@ function saveProfileDialog() {
 }
 
 function setSettingsTab(name) {
-  const selected = name === 'appearance' ? 'appearance' : 'audio';
-  ['audio', 'appearance'].forEach(id => {
+  const selected = ['audio', 'appearance', 'privacy'].includes(name) ? name : 'audio';
+  ['audio', 'appearance', 'privacy'].forEach(id => {
     const active = id === selected;
     document.getElementById('settings-' + id).hidden = !active;
     const tab = document.getElementById('tab-' + id);

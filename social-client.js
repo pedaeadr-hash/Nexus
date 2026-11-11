@@ -58,7 +58,7 @@
       connection.on('open', hello);
       connection.on('data', frame => { record.chain = record.chain.then(() => this.receive(record, frame)).catch(() => { connection.close(); this.disconnected(connection.peer, record); }); });
       connection.on('close', () => this.disconnected(connection.peer, record));
-      connection.on('error', () => this.disconnected(connection.peer, record));
+      connection.on('error', () => { connection.close(); this.disconnected(connection.peer, record); });
       if (connection.open) queueMicrotask(hello);
       return record;
     }
@@ -140,6 +140,7 @@
       if (!item) return;
       if (item.type === 'dm-message') this.store.receipt('dm:' + remote, item.payload.id, payload.error ? 'failed' : 'delivered');
       if (item.type === 'space-message' && !payload.error) this.store.receipt('space:' + item.payload.space + ':' + item.payload.channel, item.payload.message.id, 'delivered');
+      if (item.type === 'space-message' && payload.error) this.store.receipt('space:' + item.payload.space + ':' + item.payload.channel, item.payload.message.id, 'failed');
       this.store.acknowledge(item.id); this.sent.delete(item.id);
       if (payload.error) this.emit('notice', { message: M.text(payload.error, 200) });
     }
@@ -190,6 +191,7 @@
         case 'space-rejected': {
           const pending = this.joining.get(payload.space);
           if (pending && pending.owner === remote) { clearTimeout(pending.timer); this.joining.delete(payload.space); pending.reject(new Error(M.text(payload.message, 200) || 'O convite não está disponível.')); }
+          if (this.store.state.spaces[payload.space]?.owner === remote && ['missing', 'banned'].includes(payload.reason)) { if (this.voice?.space === payload.space) this.leaveVoice(); this.store.removeSpace(payload.space); this.rosters.delete(payload.space); this.emit('space-closed', { space: payload.space }); }
           return;
         }
         case 'space-leave': return this.receiveLeave(remote, payload);
@@ -293,8 +295,9 @@
     }
     receiveJoin(remote, payload, record) {
       const space = this.store.state.spaces[payload.space];
-      const reject = message => { this.send(remote, 'space-rejected', { space: payload.space, message }); return message; };
-      if (!space || space.owner !== this.id || space.banned.includes(remote)) return reject('Este espaço não está disponível.');
+      const reject = (message, reason = 'invite') => { this.send(remote, 'space-rejected', { space: payload.space, message, reason }); return message; };
+      if (!space || space.owner !== this.id) return reject('Este espaço não está disponível.', 'missing');
+      if (space.banned.includes(remote)) return reject('Este espaço não está disponível.', 'banned');
       if (!space.members[remote] && (space.invite.token !== payload.token || (space.invite.expiresAt && Date.now() > space.invite.expiresAt))) return reject('O convite expirou ou foi renovado.');
       if (!space.members[remote] && Object.keys(space.members).length >= 128) return reject('Este espaço atingiu o limite de participantes.');
       this.store.updateSpace(space.id, this.id, draft => { draft.members[remote] = record.person; });
