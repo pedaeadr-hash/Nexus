@@ -23,7 +23,7 @@
       text: value.deleted ? '' : body, createdAt: Number.isFinite(created) && created > 0 && created < Date.now() + 300000 ? created : Date.now(),
       editedAt: Number(value.editedAt) || 0, revision: Math.max(0, Number(value.revision) || 0), deleted: !!value.deleted,
       replyTo: validId(value.replyTo) ? value.replyTo : null,
-      pinned: !!value.pinned, status: ['queued', 'delivered', 'read'].includes(value.status) ? value.status : 'delivered',
+      pinned: !!value.pinned, status: ['queued', 'delivered', 'read', 'failed'].includes(value.status) ? value.status : 'delivered',
       invite: typeof value.invite === 'string' && value.invite.length < 2048 ? value.invite : null
     };
   }
