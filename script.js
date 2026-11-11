@@ -1,11 +1,12 @@
 
-const AVATARS = ['🐱','🐶','🦊','🐼','🐵','🦁','🐸','🤖','👾','🦉','🐧','🦄'];
-
-let profile = JSON.parse(localStorage.getItem('callzin_profile') || 'null') || {};
-if (!profile.name) profile.name = 'Visitante' + Math.floor(Math.random() * 900 + 100);
-if (!profile.avatar) profile.avatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+let profile = {};
+try { profile = JSON.parse(localStorage.getItem('callzin_profile') || 'null') || {}; } catch (_) {}
+if (typeof profile !== 'object' || Array.isArray(profile)) profile = {};
+if (!profile.name) profile.name = 'Visitante';
+profile.avatar = normalizeAvatar(profile.avatar);
 if (profile.inputVolume === undefined) profile.inputVolume = 100;
 if (profile.outputVolume === undefined) profile.outputVolume = 100;
+profile.outputVolume = Math.max(0, Math.min(100, Number(profile.outputVolume) || 0));
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 if (!profile.screenQuality) profile.screenQuality = isMobile ? 'sd30' : 'fhd60';
 if (profile.systemAudio === undefined) profile.systemAudio = true;
@@ -168,33 +169,27 @@ window.addEventListener('pointerdown', resumeAllRemoteAudio, { passive: true });
 window.addEventListener('keydown', resumeAllRemoteAudio);
 
 const statusEl = document.getElementById('status');
-function statusMsg(text) { statusEl.textContent = text; }
+let statusTimer;
+function statusMsg(text) {
+  clearTimeout(statusTimer);
+  statusEl.textContent = text;
+  statusEl.classList.toggle('visible', !!text);
+  if (text) statusTimer = setTimeout(() => statusEl.classList.remove('visible'), 10000);
+}
 
 /* ---------- profile UI ---------- */
-document.getElementById('profileName').value = profile.name;
-document.getElementById('profileAvatar').textContent = profile.avatar;
-document.getElementById('homeName').textContent = profile.name;
-document.getElementById('homeAvatar').textContent = profile.avatar;
+function syncProfileUI() {
+  document.getElementById('profileName').value = profile.name;
+  document.getElementById('homeName').textContent = profile.name;
+  document.getElementById('sidebarName').textContent = profile.name;
+  ['profileAvatar', 'homeAvatar', 'mobileAvatar', 'settingsAvatar'].forEach(id => {
+    renderAvatar(document.getElementById(id), profile.avatar, profile.name);
+  });
+  updateTileLabel('local', profile.name, profile.avatar);
+}
+syncProfileUI();
 document.getElementById('inputVolume').value = profile.inputVolume;
 document.getElementById('outputVolume').value = profile.outputVolume;
-
-document.getElementById('profileName').addEventListener('input', e => {
-  profile.name = e.target.value.trim() || 'Visitante';
-  saveProfile();
-  document.getElementById('homeName').textContent = profile.name;
-  updateTileLabel('local', profile.name);
-  broadcastProfile();
-});
-
-function cycleAvatar() {
-  const idx = AVATARS.indexOf(profile.avatar);
-  profile.avatar = AVATARS[(idx + 1) % AVATARS.length];
-  saveProfile();
-  document.getElementById('profileAvatar').textContent = profile.avatar;
-  document.getElementById('homeAvatar').textContent = profile.avatar;
-  updateTileLabel('local', undefined, profile.avatar);
-  broadcastProfile();
-}
 
 /* ---------- plano de fundo (troca com localStorage, começa em "nenhum") ---------- */
 const BACKGROUNDS = [
@@ -237,14 +232,14 @@ function renderBgGrid() {
   if (!grid) return;
   const checkSvg = '<span class="check"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
   const noneSvg = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-  let html = `<div class="bg-thumb none-thumb ${bgId === 'none' ? 'selected' : ''}" onclick="applyBackground('none', true)" title="Nenhum">
-    ${noneSvg}${checkSvg}
-  </div>`;
+  let html = `<button type="button" class="bg-thumb none-thumb ${bgId === 'none' ? 'selected' : ''}" onclick="applyBackground('none', true)" aria-pressed="${bgId === 'none'}" aria-label="Obsidiana, sem imagem">
+    ${noneSvg}${checkSvg}<span class="bg-thumb-label">Obsidiana</span>
+  </button>`;
   html += BACKGROUNDS.map(b => `
-    <div class="bg-thumb ${bgId === b.id ? 'selected' : ''}" style="background-image:url('${b.url}')" onclick="applyBackground('${b.id}', true)" title="${b.label}">
+    <button type="button" class="bg-thumb ${bgId === b.id ? 'selected' : ''}" style="background-image:url('${b.url}')" onclick="applyBackground('${b.id}', true)" aria-pressed="${bgId === b.id}" aria-label="${b.label}">
       ${checkSvg}
       <span class="bg-thumb-label">${b.label}</span>
-    </div>
+    </button>
   `).join('');
   grid.innerHTML = html;
 }
@@ -252,9 +247,21 @@ applyBackground(bgId, false);
 
 /* ---------- nav ---------- */
 function setView(view) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + view).classList.add('active');
-  document.querySelectorAll('.navitem').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  const target = document.getElementById('view-' + view);
+  if (!target) return;
+  document.querySelectorAll('.view').forEach(section => {
+    section.classList.toggle('active', section === target);
+    section.inert = section !== target;
+  });
+  document.querySelectorAll('.navitem').forEach(button => {
+    const active = button.dataset.view === view;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  document.getElementById('pageTitle').textContent = { home: 'Início', room: 'Sua sala', settings: 'Configurações' }[view];
+  if (typeof syncRoomUI === 'function') syncRoomUI();
+  target.querySelector('h1')?.focus({ preventScroll: true });
 }
 
 /* ---------- peer setup ---------- */
@@ -262,6 +269,12 @@ function setView(view) {
 // Sem TURN, duas pessoas atrás de redes mais restritas (roteador de operadora, Wi-Fi
 // de empresa/faculdade, dupla-NAT etc.) muitas vezes não conseguem se conectar direto
 // e a chamada nunca fecha — isso é a causa mais comum de "a call não funciona".
+function initializePeer() {
+if (typeof Peer === 'undefined') {
+  updateNetworkStatus('bad', 'Indisponível');
+  statusMsg('Não foi possível carregar a conexão. Verifique sua internet e recarregue a página.');
+  return;
+}
 peer = new Peer(undefined, {
   config: {
     iceServers: [
@@ -279,6 +292,7 @@ peer = new Peer(undefined, {
 });
 peer.on('open', id => {
   myId = id;
+  updateNetworkStatus('ok', 'Disponível');
   document.getElementById('sidebarMyid').textContent = id;
   updateInviteLink();
   if (autoJoinRoomId) { document.getElementById('roomId').value = autoJoinRoomId; enterRoom(); autoJoinRoomId = null; }
@@ -298,14 +312,16 @@ peer.on('error', err => {
   statusMsg(PEER_ERROR_MESSAGES[err.type] || ('Erro: ' + err.type));
   if (err.type === 'unavailable-id') { setTimeout(() => { peer.reconnect(); }, 500); }
   if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
+    updateNetworkStatus('bad', 'Sem conexão');
     updateConnBadge('bad', 'sem conexão com o servidor');
   }
 });
 peer.on('disconnected', () => {
+  updateNetworkStatus('bad', 'Reconectando');
   updateConnBadge('bad', 'reconectando...');
   setTimeout(() => { try { peer.reconnect(); } catch (e) {} }, 1000);
 });
-peer.on('close', () => { updateConnBadge('bad', 'desconectado'); });
+peer.on('close', () => { updateNetworkStatus('bad', 'Desconectado'); updateConnBadge('bad', 'desconectado'); });
 
 peer.on('call', incoming => {
   const id = incoming.peer;
@@ -315,7 +331,9 @@ peer.on('call', incoming => {
     else { wireParticipant(id, incoming, peer.connect(id)); }
   } else {
     pendingCall = incoming;
-    document.getElementById('ringOverlay').style.display = 'flex';
+    const dialog = document.getElementById('ringOverlay');
+    if (!dialog.open) dialog.showModal();
+    incoming.on('close', () => { if (pendingCall === incoming) { pendingCall = null; dialog.close(); } });
   }
 });
 
@@ -325,6 +343,15 @@ peer.on('connection', dataConn => {
   if (participants.has(id)) { participants.get(id).dataConn = dataConn; wireDataConn(id, dataConn); }
   else { wireParticipant(id, peer.call(id, localStream), dataConn); }
 });
+}
+initializePeer();
+
+function updateNetworkStatus(state, text) {
+  const indicator = document.getElementById('networkStatus');
+  indicator.dataset.state = state;
+  document.getElementById('networkText').textContent = text;
+  indicator.title = state === 'ok' ? 'Conexão disponível' : 'Tentar reconectar';
+}
 
 /* ---------- mic ---------- */
 function makeBlankVideoTrack() {
@@ -351,7 +378,7 @@ async function populateMicSelect() {
 }
 // O navegador só mostra a lista real de microfones (com nomes) depois que o site
 // recebe permissão pelo menos uma vez. Antes disso, ele devolve só 1 entrada
-// genérica ("Microfone 1") por privacidade — não é bug do Callzin, é assim que o
+// genérica ("Microfone 1") por privacidade — não é bug do Nexus, é assim que o
 // Chrome/Edge/Firefox funcionam pra qualquer site (o Discord só mostra tudo certo
 // porque é um app instalado, com permissão de sistema já concedida).
 async function updateDeviceHintForPermission(mics) {
@@ -372,7 +399,7 @@ async function updateDeviceHintForPermission(mics) {
   } catch (e) { /* Firefox e alguns navegadores não suportam consultar essa permissão */ }
   hint.style.color = '#ffcd3c';
   hint.textContent = mics.length <= 1
-    ? '⚠️ Só aparece "Microfone 1" genérico porque a permissão de microfone ' + stateMsg + ' pra este site. Clique em "ativar microfone" acima e, quando o navegador perguntar, escolha Permitir. Se não aparecer nenhum pop-up, clique no cadeado/ícone ao lado do endereço do site e libere o microfone manualmente.'
+    ? 'Só aparece "Microfone 1" genérico porque a permissão de microfone ' + stateMsg + ' pra este site. Clique em "ativar microfone" acima e, quando o navegador perguntar, escolha Permitir. Se não aparecer nenhum pop-up, clique no cadeado/ícone ao lado do endereço do site e libere o microfone manualmente.'
     : hint.textContent;
 }
 async function populateSpeakerSelect() {
@@ -537,9 +564,10 @@ function onSystemAudioCheckChange() {
 document.getElementById('screenQualitySelect').value = profile.screenQuality;
 document.getElementById('systemAudioCheck').checked = profile.systemAudio;
 
-function copyId() {
-  navigator.clipboard.writeText(myId || '');
-  statusMsg('ID copiado!');
+async function copyId() {
+  if (!myId) { statusMsg('Seu ID estará disponível assim que a conexão for estabelecida.'); return; }
+  try { await navigator.clipboard.writeText(myId); statusMsg('Seu ID foi copiado.'); }
+  catch (_) { statusMsg('Não foi possível copiar. Você pode selecionar seu ID na barra lateral.'); }
 }
 
 /* ---------- status de conexão ---------- */
@@ -561,13 +589,15 @@ function toggleDeafen() {
     t.video.muted = true;
     if (t.audio) t.audio.muted = deafened;
   });
+  syncCallControls();
 }
 
 /* ---------- link de convite (?room=SEU_ID) ---------- */
-function copyInviteLink() {
+async function copyInviteLink() {
   const input = document.getElementById('inviteLink');
-  navigator.clipboard.writeText(input.value);
-  statusMsg('Link copiado!');
+  if (!input.value) { statusMsg('O convite estará disponível quando a conexão for estabelecida.'); return; }
+  try { await navigator.clipboard.writeText(input.value); statusMsg('Convite copiado. Agora é só chamar sua gente.'); }
+  catch (_) { input.focus(); input.select(); statusMsg('Selecione e copie o link de convite.'); }
 }
 function updateInviteLink() {
   if (!myId) return;
@@ -586,8 +616,9 @@ function updateInviteLink() {
 /* ---------- atalho de teclado: M alterna o microfone ---------- */
 document.addEventListener('keydown', e => {
   if (e.key.toLowerCase() !== 'm') return;
+  if (e.repeat || e.ctrlKey || e.altKey || e.metaKey || document.querySelector('dialog[open]')) return;
   const tag = document.activeElement && document.activeElement.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return; // não atrapalha quando o usuário está digitando
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable) return;
   if (inRoom) toggleMic();
 });
 
@@ -612,14 +643,14 @@ function ensureTile(id, { name, avatar, isLocal } = {}) {
   overlay.className = 'avatar-overlay';
   const circle = document.createElement('div');
   circle.className = 'avatar-circle';
-  circle.textContent = avatar || '🙂';
+  renderAvatar(circle, avatar, name);
   const label = document.createElement('span');
   label.className = 'avatar-label';
-  label.textContent = isLocal ? 'tela não compartilhada' : 'aguardando transmissão';
+  label.textContent = isLocal ? 'Você está na sala' : 'Em boa companhia';
   overlay.append(circle, label);
 
   const fsBtn = document.createElement('button');
-  fsBtn.className = 'fs-btn'; fsBtn.title = 'tela cheia';
+  fsBtn.className = 'fs-btn'; fsBtn.title = 'Tela cheia'; fsBtn.setAttribute('aria-label', 'Abrir transmissão em tela cheia');
   fsBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   fsBtn.onclick = () => toggleFullscreen('tile-' + id);
 
@@ -638,7 +669,8 @@ function removeTile(id) { const t = tiles.get(id); if (t) { t.wrap.remove(); til
 function updateTileLabel(id, name, avatar) {
   const t = tiles.get(id); if (!t) return;
   if (name !== undefined) t.tag.textContent = name + (t.isLocal ? ' (você)' : '');
-  if (avatar !== undefined) t.circle.textContent = avatar;
+  const info = t.isLocal ? profile : participants.get(id);
+  if (avatar !== undefined || name !== undefined) renderAvatar(t.circle, avatar ?? info?.avatar, name ?? info?.name);
 }
 function setTileSharing(id, sharing) {
   const t = tiles.get(id); if (t) t.overlay.style.display = sharing ? 'none' : 'flex';
@@ -664,7 +696,7 @@ function updateSpotlight() {
 }
 function updateParticipantCount() {
   const n = participants.size + 1;
-  document.getElementById('roomCount').textContent = 'Sala • ' + n + (n === 1 ? ' pessoa' : ' pessoas');
+  document.getElementById('roomCount').textContent = n + (n === 1 ? ' pessoa na sala' : ' pessoas na sala');
 }
 function toggleFullscreen(wrapId) {
   const el = document.getElementById(wrapId);
@@ -772,7 +804,7 @@ function wireDataConn(id, dataConn) {
   dataConn.on('close', () => removeParticipant(id));
 }
 function wireParticipant(id, call, dataConn) {
-  if (!participants.has(id)) participants.set(id, { call: null, dataConn: null, name: 'Participante', avatar: '🙂', sharing: false });
+  if (!participants.has(id)) participants.set(id, { call: null, dataConn: null, name: 'Participante', avatar: 'carbon', sharing: false });
   const p = participants.get(id);
   if (call) { p.call = call; wireCall(id, call); }
   if (dataConn) { p.dataConn = dataConn; wireDataConn(id, dataConn); }
@@ -806,7 +838,7 @@ function removeParticipant(id) {
 /* ---------- ring (chamada avulsa fora de sala) ---------- */
 async function acceptIncoming() {
   if (!pendingCall) return;
-  document.getElementById('ringOverlay').style.display = 'none';
+  document.getElementById('ringOverlay').close();
   statusMsg('Conectando...');
   try {
     await getLocalStream();
@@ -823,11 +855,16 @@ async function acceptIncoming() {
 function declineIncoming() {
   if (pendingCall) pendingCall.close();
   pendingCall = null;
-  document.getElementById('ringOverlay').style.display = 'none';
+  document.getElementById('ringOverlay').close();
 }
 
 /* ---------- entrar / sair da sala ---------- */
 async function enterRoom() {
+  if (inRoom) { setView('room'); return; }
+  if (!myId || !peer || peer.disconnected || peer.destroyed) {
+    statusMsg('Aguarde a conexão ficar disponível para entrar em uma sala.');
+    return;
+  }
   const val = document.getElementById('roomId').value.trim();
   statusMsg('Conectando...');
   try { await getLocalStream(); }
@@ -868,6 +905,7 @@ function toggleMic() {
     localStream.getAudioTracks().forEach(track => { track.enabled = micOn; });
   }
   document.getElementById('micBtn').classList.toggle('off', !micOn);
+  syncCallControls();
 }
 
 function boostBitrate(sender, quality) {
@@ -896,13 +934,18 @@ function broadcastProfile() {
 }
 
 async function toggleScreen() {
+  if (!inRoom || !localStream) return;
+  if (!navigator.mediaDevices?.getDisplayMedia) {
+    statusMsg('Este navegador não permite compartilhar a tela. Você pode continuar participando por voz.');
+    return;
+  }
   if (!mySharing) {
     const quality = SCREEN_QUALITY_PRESETS[profile.screenQuality] || SCREEN_QUALITY_PRESETS.fhd60;
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: { width: { ideal: quality.width }, height: { ideal: quality.height }, frameRate: { ideal: quality.frameRate, max: quality.frameRate } },
         audio: profile.systemAudio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : false,
-        // impede que a própria aba do Callzin seja capturada — sem isso, o áudio do
+        // impede que a própria aba do Nexus seja capturada — sem isso, o áudio do
         // sistema pega de volta a voz de quem está ouvindo (tocando aqui na página)
         // e manda de volta pra pessoa, causando eco. Também some da lista de opções
         // pra compartilhar, então dá pra escolher só outra aba, janela ou a tela toda.
@@ -942,6 +985,7 @@ async function toggleScreen() {
       screenTrack.onended = () => stopScreenShare();
       mySharing = true;
       document.getElementById('shareBtn').classList.add('sharing');
+      syncCallControls();
       setTileSharing('local', true);
       broadcastSharing(true);
       updateSpotlight();
@@ -963,6 +1007,7 @@ function stopScreenShare() {
   replaceVideoTrackEverywhere(blankVideoTrack);
   mySharing = false;
   document.getElementById('shareBtn').classList.remove('sharing');
+  syncCallControls();
   setTileSharing('local', false);
   broadcastSharing(false);
   updateSpotlight();

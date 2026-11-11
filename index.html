@@ -1,182 +1,214 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Callzin</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0c0d">
+  <meta name="description" content="Um espaço para reunir a sua gente. Crie uma sala de voz, compartilhe a tela e fique por perto.">
+  <title>Nexus — por perto.</title>
+  <link rel="icon" type="image/svg+xml" href="assets/mark.svg">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+  <script defer src="avatars.js"></script>
+  <script defer src="script.js"></script>
+  <script defer src="ui.js"></script>
 </head>
 <body>
-
-<div id="grain"></div>
-<div class="bg-layer" id="bgLayerA"></div>
-<div class="bg-layer" id="bgLayerB"></div>
-<div id="bgOverlay"></div>
-<div class="orb" id="orb1"></div>
-<div class="orb" id="orb2"></div>
+<a class="skip-link" href="#mainarea">Pular para o conteúdo</a>
+<svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3.5 10 7-6a2.3 2.3 0 0 1 3 0l7 6V19a2 2 0 0 1-2 2h-4v-6h-5v6h-4a2 2 0 0 1-2-2Z"/></symbol>
+  <symbol id="i-room" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="4"/><path d="m8 21 4-3M8 10h.01M12 10h.01M16 10h.01"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.5 3h5l.7 2.3 2 .9 2.2-.5 2.4 4.3-1.6 1.8v2.3l1.6 1.7-2.4 4.2-2.3-.5-2 .9-.6 2.1h-5l-.7-2.1-2-.9-2.2.5-2.4-4.2 1.6-1.7v-2.3L2.2 10l2.4-4.3 2.3.5 2-.9Z" transform="translate(0 -1) scale(1 .96)"/><circle cx="12" cy="11.5" r="3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-diagonal" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="m10 13 4-4m-7 6-1 1a4.2 4.2 0 0 0 6 6l4-4a4.2 4.2 0 0 0 0-6M17 9l1-1a4.2 4.2 0 0 0-6-6L8 6a4.2 4.2 0 0 0 0 6" transform="translate(0 1) scale(1 .9)"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="3"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0m-7 7v3m-3 0h6"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="12" width="4" height="8" rx="2"/><rect x="17" y="12" width="4" height="8" rx="2"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="3"/><path d="M8 21h8m-4-4v4m-3-10 3-3 3 3m-3-3v6"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 3h3l2 5-2 2a14 14 0 0 0 6 6l2-2 5 2v3a2 2 0 0 1-2 2C10 21 3 14 3 5a2 2 0 0 1 2-2Z"/></symbol>
+  <symbol id="i-leave" viewBox="0 0 24 24"><path d="M3 14c5-5 13-5 18 0v4h-5v-4m-8 0v4H3"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="m15 4 5 5M4 20l5-1L21 7a2.1 2.1 0 0 0-5-3L4 16Z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+</svg>
+<div class="bg-layer" id="bgLayerA" aria-hidden="true"></div>
+<div class="bg-layer" id="bgLayerB" aria-hidden="true"></div>
+<div id="bgOverlay" aria-hidden="true"></div>
 
 <div id="app">
-  <aside id="sidebar">
-    <div class="brand">
-      <span class="mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 15C4 10.0294 8.02944 6 13 6C17.9706 6 22 10.0294 22 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="13" cy="15" r="2.4" fill="currentColor"/><path d="M2 15H4M22 15H24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-      <span class="wordmark">Callzin</span>
-    </div>
-
-    <nav class="navlist">
-      <button class="navitem active" data-view="home" onclick="setView('home')">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 11.5L12 4L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 10V19C5.5 19.5523 5.94772 20 6.5 20H9.5V15C9.5 14.4477 9.94772 14 10.5 14H13.5C14.0523 14 14.5 14.4477 14.5 15V20H17.5C18.0523 20 18.5 19.5523 18.5 19V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Início</span>
+  <aside id="sidebar" aria-label="Barra lateral">
+    <a class="brand" href="./" aria-label="Nexus, início" onclick="event.preventDefault(); setView('home')">
+      <img class="brand-mark" src="assets/mark.svg" alt="" width="34" height="34">
+      <span class="wordmark">nexus<span class="brand-period">.</span></span>
+    </a>
+    <div class="sidebar-label">SEU ESPAÇO</div>
+    <nav class="navlist" aria-label="Navegação principal">
+      <button class="navitem active" data-view="home" onclick="setView('home')" aria-current="page" aria-label="Início">
+        <svg class="icon"><use href="#i-home"/></svg><span>Início</span><span class="nav-index" aria-hidden="true">01</span>
       </button>
-      <button class="navitem" data-view="room" onclick="setView('room')">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19C3.5 15.9624 6.13401 13.5 9 13.5C11.866 13.5 14.5 15.9624 14.5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M15.5 6.5C16.8807 6.5 18 7.61929 18 9C18 10.3807 16.8807 11.5 15.5 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 13.7C18.36 14.14 20.5 15.9 20.5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <span>Sala</span>
+      <button class="navitem" data-view="room" onclick="setView('room')" aria-label="Sua sala">
+        <svg class="icon"><use href="#i-room"/></svg><span>Sua sala</span><span class="room-indicator" id="roomIndicator" hidden aria-label="Sala ativa"></span>
       </button>
-      <button class="navitem" data-view="settings" onclick="setView('settings')">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15A1.65 1.65 0 0018 17.1a1.65 1.65 0 00.6 2.1l.1.06a2 2 0 11-2.8 2.8l-.06-.1a1.65 1.65 0 00-2.1-.6 1.65 1.65 0 00-1 1.51V23a2 2 0 11-4 0v-.09A1.65 1.65 0 009.9 21.4a1.65 1.65 0 00-2.1.6l-.06.1a2 2 0 11-2.8-2.8l.1-.06a1.65 1.65 0 00.6-2.1 1.65 1.65 0 00-1.51-1H4a2 2 0 110-4h.09A1.65 1.65 0 005.6 9.9a1.65 1.65 0 00-.6-2.1l-.1-.06a2 2 0 112.8-2.8l.06.1a1.65 1.65 0 002.1.6h.05A1.65 1.65 0 0011.5 4.1V4a2 2 0 114 0v.09c.03.65.4 1.23 1 1.51h.05a1.65 1.65 0 002.1-.6l.06-.1a2 2 0 112.8 2.8l-.1.06a1.65 1.65 0 00-.6 2.1v.05c.29.6.86.98 1.51 1H23a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-        <span>Configurações</span>
+      <button class="navitem" data-view="settings" onclick="setView('settings')" aria-label="Configurações">
+        <svg class="icon"><use href="#i-settings"/></svg><span>Configurações</span>
       </button>
     </nav>
-
+    <div class="sidebar-note"><span class="tiny-cross" aria-hidden="true">+</span><p>Um lugar para<br>ficar por perto.</p><span class="note-coordinate">SEM DISTÂNCIA.</span></div>
     <div class="sidebar-footer">
-      <div class="profile-card">
-        <div class="avatar-picker" id="avatarPicker" onclick="cycleAvatar()" title="trocar avatar"><span id="profileAvatar">🙂</span></div>
-        <input id="profileName" type="text" maxlength="18" placeholder="seu nome">
-      </div>
-
       <div class="myid-box">
-        <span id="sidebarMyid">gerando...</span>
-        <button onclick="copyId()">copiar</button>
+        <span class="myid-label">SEU ID</span>
+        <div class="myid-row"><span id="sidebarMyid">Conectando…</span><button class="icon-button" onclick="copyId()" title="Copiar seu ID" aria-label="Copiar seu ID"><svg class="icon"><use href="#i-copy"/></svg></button></div>
       </div>
+      <button class="profile-card" onclick="openProfile()" aria-label="Editar seu perfil">
+        <span class="avatar-picker" id="profileAvatar" aria-hidden="true"></span>
+        <span class="profile-info"><b id="sidebarName">Visitante</b><span>Seu perfil</span></span>
+        <svg class="icon profile-edit"><use href="#i-edit"/></svg>
+      </button>
     </div>
   </aside>
 
-  <main id="mainarea">
+  <main id="mainarea" tabindex="-1">
+    <header class="topbar">
+      <div class="breadcrumb"><span class="breadcrumb-root">Seu espaço</span><svg class="icon"><use href="#i-chevron"/></svg><span id="pageTitle">Início</span></div>
+      <button class="network-status" id="networkStatus" onclick="retryConnection()" title="Verificar conexão"><span class="network-dot"></span><span id="networkText">Conectando</span><span class="connection-caption"> / DIRETO</span></button>
+      <button class="mobile-profile icon-button" onclick="openProfile()" aria-label="Editar seu perfil"><span id="mobileAvatar" aria-hidden="true"></span></button>
+    </header>
 
-    <section id="view-home" class="view active">
-      <div class="card">
-        <span class="eyebrow">Callzin</span>
-        <h1>Bem-vindo de volta</h1>
-        <p>Oi, <span id="homeAvatar">🙂</span> <b id="homeName">...</b>. Entre em uma sala com quantas pessoas quiser, igual no Discord: crie uma sala e mande seu ID, ou cole o ID de alguém que já está numa sala.</p>
+    <section id="view-home" class="view active" aria-labelledby="homeHeading">
+      <div class="page-heading">
+        <div><span class="eyebrow">BOM TER VOCÊ AQUI</span><h1 id="homeHeading" tabindex="-1">O seu ponto<br class="mobile-break"> de encontro<span class="quiet-dot">.</span></h1></div>
+        <p>As melhores conversas<br>não precisam de um motivo.</p>
+      </div>
 
-        <label>ID da sala (deixe em branco pra criar uma nova)</label>
-        <input type="text" id="roomId" placeholder="cole o ID de alguém que já está na sala">
-        <button class="primary" onclick="enterRoom()">Entrar / criar sala</button>
-        <div id="status"></div>
-
-        <div id="inviteBox" style="display:none; margin-top:22px;">
-          <label>Link de convite da sua sala</label>
-          <div class="invite-row">
-            <input type="text" id="inviteLink" readonly>
-            <button class="secondary" onclick="copyInviteLink()">copiar link</button>
+      <div class="home-layout">
+        <div class="feature-panel">
+          <div class="feature-kicker"><span class="live-mark" aria-hidden="true"></span> VOZ, TELA E BOA COMPANHIA</div>
+          <div class="chrome-art" aria-hidden="true">
+            <svg viewBox="0 0 520 380" fill="none">
+              <defs>
+                <linearGradient id="metal" x1="91" y1="83" x2="358" y2="320" gradientUnits="userSpaceOnUse"><stop stop-color="#f5f5f2"/><stop offset=".15" stop-color="#686c71"/><stop offset=".31" stop-color="#e6e9eb"/><stop offset=".48" stop-color="#3e4146"/><stop offset=".65" stop-color="#aeb3b8"/><stop offset=".8" stop-color="#eeeeec"/><stop offset="1" stop-color="#51555a"/></linearGradient>
+                <linearGradient id="metalEdge" x1="130" y1="90" x2="359" y2="273" gradientUnits="userSpaceOnUse"><stop stop-color="#85898e"/><stop offset=".35" stop-color="#202226"/><stop offset=".66" stop-color="#e1e4e5"/><stop offset="1" stop-color="#53585e"/></linearGradient>
+                <radialGradient id="artHalo"><stop stop-color="#555b62" stop-opacity=".16"/><stop offset="1" stop-color="#555b62" stop-opacity="0"/></radialGradient>
+                <filter id="artShadow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="17"/></filter>
+              </defs>
+              <ellipse cx="260" cy="201" rx="235" ry="165" fill="url(#artHalo)"/>
+              <ellipse cx="258" cy="309" rx="114" ry="11" fill="#000" opacity=".7" filter="url(#artShadow)"/>
+              <g class="orbit-lines" stroke="#34373a" stroke-width=".7"><ellipse cx="260" cy="199" rx="210" ry="72" transform="rotate(-28 260 199)"/><ellipse cx="260" cy="199" rx="210" ry="72" transform="rotate(28 260 199)"/></g>
+              <g class="metal-object" transform="translate(0 -5) rotate(-12 260 190)">
+                <path d="M185 86h99l57 57v85h-55v-64l-25-25h-76V86Z" fill="url(#metalEdge)" stroke="#a0a4a7" stroke-width=".6"/>
+                <path d="M165 105h99l57 57v85h-55v-64l-25-25h-76v-53Z" fill="url(#metal)" stroke="#f0f0ee" stroke-opacity=".5" stroke-width=".75"/>
+                <path d="m264 105 20-19m37 76 20-19m-20 104 20-19m-75 19 20-19m-20-45 20-19" stroke="#e8e9e9" stroke-opacity=".4" stroke-width=".8"/>
+                <path d="M152 160h47v48h-17v47h47v-17h48v47a18 18 0 0 1-18 18H152a18 18 0 0 1-18-18V178a18 18 0 0 1 18-18Z" fill="url(#metalEdge)" stroke="#82878b" stroke-width=".6"/>
+                <path d="M135 144h47v48h-17v47h47v-17h48v47a18 18 0 0 1-18 18H135a18 18 0 0 1-18-18V162a18 18 0 0 1 18-18Z" fill="url(#metal)" stroke="#e9e9e7" stroke-opacity=".5" stroke-width=".75"/>
+                <path d="m182 144 17 16m61 62 17 16m-17 31 17 16m-135 2 17 16" stroke="#ececeb" stroke-opacity=".3" stroke-width=".7"/>
+              </g>
+              <g fill="#7c8187"><circle cx="76" cy="150" r="2"/><circle cx="444" cy="246" r="2"/><path d="M391 89v12m-6-6h12" stroke="#6d7277" stroke-width="1"/></g>
+            </svg>
           </div>
-          <p class="hint" style="margin-top:8px;">Manda esse link pra quem quiser entrar — abre e já cai direto na sua sala.</p>
+          <div class="feature-copy"><h2>Mais perto.<br>Mais você.</h2><p>Pra jogar, criar, ou só<br>deixar a conversa acontecer.</p></div>
+          <div class="feature-bottom"><span>MENOS RUÍDO. MAIS CONEXÃO.</span><div class="sound-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
+
+        <div class="entry-panel">
+          <div class="entry-tabs" role="tablist" aria-label="Como entrar">
+            <button id="tab-create" class="entry-tab active" role="tab" aria-selected="true" aria-controls="entryForm" onclick="setEntryMode('create')"><svg class="icon"><use href="#i-plus"/></svg>Criar sala</button>
+            <button id="tab-join" class="entry-tab" role="tab" aria-selected="false" aria-controls="entryForm" tabindex="-1" onclick="setEntryMode('join')"><svg class="icon"><use href="#i-link"/></svg>Tenho um convite</button>
+          </div>
+          <form id="entryForm" role="tabpanel" aria-labelledby="tab-create" onsubmit="event.preventDefault(); submitRoom()">
+            <div class="entry-heading"><span class="eyebrow" id="entryEyebrow">A CONVERSA É SUA</span><h2 id="entryTitle">Abre a sala.<br>Chama a sua gente.</h2><p id="entryDescription">Um espaço só de vocês, a um clique de distância.</p></div>
+            <div class="entry-profile"><span id="homeAvatar" aria-hidden="true"></span><span>Você entra como <b id="homeName">Visitante</b></span><button type="button" class="text-button" onclick="openProfile()" aria-label="Editar seu perfil">Editar<svg class="icon"><use href="#i-diagonal"/></svg></button></div>
+            <div class="join-field" id="joinField" hidden><label for="roomId">ID da sala ou link de convite</label><div class="input-with-icon"><svg class="icon"><use href="#i-link"/></svg><input id="roomId" type="text" autocomplete="off" spellcheck="false" placeholder="Cole seu convite aqui" aria-describedby="joinHelp"></div><p class="hint" id="joinHelp">Peça o convite para alguém que já está na sala.</p></div>
+            <button class="primary entry-submit" id="enterRoomBtn" type="submit"><span id="entryButtonLabel">Criar uma sala</span><svg class="icon"><use href="#i-arrow"/></svg></button>
+            <div class="entry-assurance"><svg class="icon"><use href="#i-lock"/></svg><span>Sem cadastro. A conversa fica entre vocês.</span></div>
+          </form>
+          <div class="session-notice" id="sessionNotice" hidden><span class="network-dot"></span><span>Sua sala está aberta.</span><button class="text-button" onclick="setView('room')">Voltar<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+          <div class="entry-footnote"><span class="entry-note-index">/ 01</span><p>O microfone só é ativado<br>quando você entra na sala.</p><svg class="icon"><use href="#i-mic"/></svg></div>
+        </div>
+      </div>
+      <div class="getting-started" aria-label="Como funciona">
+        <div class="getting-title">É simples<br>assim<span>.</span></div>
+        <div class="step"><span class="step-number">01</span><div><h3>Crie seu espaço</h3><p>Sem conta, sem complicação.</p></div></div>
+        <div class="step"><span class="step-number">02</span><div><h3>Envie o convite</h3><p>Quem importa, por perto.</p></div></div>
+        <div class="step"><span class="step-number">03</span><div><h3>Fique à vontade</h3><p>O papo não tem hora pra acabar.</p></div></div>
       </div>
     </section>
 
-    <section id="view-room" class="view">
-      <div class="room-header" id="roomCount">Sala • 1 pessoa
-        <span class="conn-badge" id="connBadge"><span class="conn-dot" id="connDot"></span><span id="connText">conectando...</span></span>
-      </div>
-      <div id="videos"></div>
-      <div id="bar">
-        <button id="micBtn" onclick="toggleMic()" title="ligar/desligar microfone">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0014 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-        <button id="deafenBtn" onclick="toggleDeafen()" title="ensurdecer (não ouvir ninguém)">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 13v-1a8 8 0 0116 0v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="3" y="13" width="4" height="6" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="17" y="13" width="4" height="6" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>
-        </button>
-        <button id="shareBtn" onclick="toggleScreen()" title="transmitir tela">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 20h8M12 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-        <button id="hangup" onclick="leaveRoom()" title="sair da sala">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.6 10.8C7.4 15.6 16.6 15.6 20.4 10.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" transform="rotate(180 12 12)"/><path d="M2 9.5c2.2-2 5-3 10-3s7.8 1 10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9.5 12l5 5M14.5 12l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-    </section>
-
-    <section id="view-settings" class="view">
-      <div class="card" style="max-width:480px;">
-        <span class="eyebrow">Preferências</span>
-        <h1>Configurações</h1>
-        <p>Sua escolha de dispositivos e seu perfil ficam salvos neste navegador.</p>
-
-        <div class="row-actions">
-          <button class="secondary" id="activateDevicesBtn" onclick="activateDevices()">ativar microfone e ver dispositivos</button>
+    <section id="view-room" class="view" aria-labelledby="roomHeading" inert>
+      <div class="page-heading compact"><div><span class="eyebrow">EM BOA COMPANHIA</span><h1 id="roomHeading" tabindex="-1">Sua sala<span class="quiet-dot">.</span></h1></div><span class="room-caption">Um espaço só de vocês.</span></div>
+      <div class="room-empty" id="roomEmpty"><div class="empty-symbol"><svg class="icon"><use href="#i-room"/></svg></div><span class="eyebrow">TUDO COMEÇA COM UM OI</span><h2>Tem lugar pra todo mundo.</h2><p>Crie uma sala e mande o convite.<br>Sua próxima boa conversa começa aqui.</p><button class="primary" onclick="setView('home'); setEntryMode('create')">Criar uma sala<svg class="icon"><use href="#i-arrow"/></svg></button><button class="text-button" onclick="setView('home'); setEntryMode('join')">Já tenho um convite</button></div>
+      <div class="room-stage" id="roomStage" hidden>
+        <div class="room-header"><span id="roomCount">1 pessoa na sala</span><span class="conn-badge" id="connBadge"><span class="conn-dot" id="connDot"></span><span id="connText">Conectando…</span></span></div>
+        <div id="videos" aria-label="Participantes da sala"></div>
+        <div class="room-bottom"><div class="room-hint"><svg class="icon"><use href="#i-headphones"/></svg><span>Chega mais.<br><b>Você está em casa.</b></span></div>
+          <div id="bar" role="toolbar" aria-label="Controles da chamada">
+            <button id="micBtn" onclick="toggleMic()" title="Desativar microfone (M)" aria-label="Desativar microfone" aria-pressed="false"><svg class="icon"><use href="#i-mic"/></svg></button>
+            <button id="deafenBtn" onclick="toggleDeafen()" title="Silenciar áudio recebido" aria-label="Silenciar áudio recebido" aria-pressed="false"><svg class="icon"><use href="#i-headphones"/></svg></button>
+            <span class="bar-divider" aria-hidden="true"></span>
+            <button id="shareBtn" onclick="toggleScreen()" title="Compartilhar tela" aria-label="Compartilhar tela" aria-pressed="false"><svg class="icon"><use href="#i-screen"/></svg></button>
+            <button id="hangup" onclick="leaveRoom()" title="Sair da sala" aria-label="Sair da sala"><svg class="icon"><use href="#i-leave"/></svg></button>
+          </div>
+          <button class="secondary room-invite" onclick="copyInviteLink()"><svg class="icon"><use href="#i-link"/></svg><span>Convidar</span></button>
         </div>
-        <p class="hint" id="deviceStatusHint" style="margin-top:-4px; margin-bottom:18px;">Se os nomes dos dispositivos abaixo aparecerem como "Microfone 1", clique no botão acima pra liberar a permissão e ver os nomes reais (ex.: "WO Mic Device", "Steam Streaming Microphone" etc.)</p>
-
-        <label>Dispositivo de entrada (microfone)</label>
-        <select id="micSelect" onchange="onMicChange()"></select>
-        <div class="meter"><div class="meter-fill" id="micMeterFill"></div></div>
-        <p class="hint" style="margin-top:-14px; margin-bottom:20px;">A barra verde acima se mexe quando seu microfone capta som — é o jeito mais fácil de saber se sua voz está saindo. Pode trocar o microfone mesmo durante a chamada.</p>
-
-        <label>Volume de entrada</label>
-        <input type="range" id="inputVolume" min="0" max="200" value="100" oninput="onInputVolumeChange()">
-        <p class="hint" style="margin-top:-14px; margin-bottom:20px;">Ganho aplicado à sua voz antes de enviar para a chamada.</p>
-
-        <label>Dispositivo de saída (alto-falante)</label>
-        <select id="speakerSelect" onchange="onSpeakerChange()"></select>
-        <div class="row-actions" style="margin-top:8px;">
-          <button class="secondary" onclick="testSpeaker()">testar alto-falante</button>
-        </div>
-        <p class="hint" id="speakerHint">Pode trocar o alto-falante mesmo durante a chamada.</p>
-
-        <label>Volume de saída</label>
-        <input type="range" id="outputVolume" min="0" max="200" value="100" oninput="onOutputVolumeChange()">
-        <p class="hint" style="margin-top:-14px; margin-bottom:20px;">Controla o volume de tudo que você ouve na chamada.</p>
-
-        <label>Qualidade da transmissão de tela</label>
-        <select id="screenQualitySelect" onchange="onScreenQualityChange()">
-          <option value="fhd60">Full HD 60fps (1920×1080)</option>
-          <option value="fhd30">Full HD 30fps (1920×1080)</option>
-          <option value="hd60">HD 60fps (1280×720)</option>
-          <option value="hd30">HD 30fps (1280×720)</option>
-          <option value="sd30">SD 30fps (854×480) — mais leve</option>
-        </select>
-        <p class="hint" style="margin-top:-14px; margin-bottom:8px;">Qualidades maiores usam mais internet dos dois lados. Se a transmissão travar, tente uma opção menor.</p>
-
-        <div class="check-row">
-          <input type="checkbox" id="systemAudioCheck" checked onchange="onSystemAudioCheckChange()">
-          <span class="check-txt">
-            <b>Incluir áudio do sistema ao compartilhar tela</b><br>
-            Se você escolher compartilhar <b>uma aba específica</b> (ex.: uma música/vídeo), o áudio dela vai junto sem problema. Mas se escolher <b>a tela inteira ou uma janela</b>, o Windows também captura o som da própria chamada e isso cria eco (a pessoa ouve a própria voz voltando). Por isso, quando detectamos esse caso, o Callzin desliga sozinho o áudio do sistema pra evitar o eco.
-          </span>
-        </div>
-
-        <label>Plano de fundo</label>
-        <div class="bg-grid" id="bgGrid"></div>
-        <p class="hint" style="margin-bottom:4px;">Sua escolha fica salva neste navegador (localStorage) e é aplicada assim que a página abre.</p>
+        <div id="inviteBox" class="invite-box" style="display:none"><label for="inviteLink">A sala fica melhor com companhia</label><div class="invite-row"><div class="input-with-icon"><svg class="icon"><use href="#i-link"/></svg><input id="inviteLink" type="text" readonly aria-label="Link de convite"></div><button class="secondary" onclick="copyInviteLink()"><svg class="icon"><use href="#i-copy"/></svg>Copiar link</button></div></div>
       </div>
     </section>
 
+    <section id="view-settings" class="view" aria-labelledby="settingsHeading" inert>
+      <div class="page-heading compact"><div><span class="eyebrow">SEU ESPAÇO, SUAS ESCOLHAS</span><h1 id="settingsHeading" tabindex="-1">Do seu jeito<span class="quiet-dot">.</span></h1></div><p>Os pequenos ajustes<br>fazem toda a diferença.</p></div>
+      <div class="settings-tabs" role="tablist" aria-label="Preferências">
+        <button class="settings-tab active" id="tab-audio" role="tab" aria-selected="true" aria-controls="settings-audio" onclick="setSettingsTab('audio')">Áudio e tela</button>
+        <button class="settings-tab" id="tab-appearance" role="tab" aria-selected="false" aria-controls="settings-appearance" tabindex="-1" onclick="setSettingsTab('appearance')">Aparência</button>
+        <button class="text-button settings-profile" onclick="openProfile()"><svg class="icon"><use href="#i-user"/></svg>Editar perfil</button>
+      </div>
+      <div id="settings-audio" class="settings-content" role="tabpanel" aria-labelledby="tab-audio">
+        <section class="settings-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-mic"/></svg></span><div><h2>Seu áudio</h2><p>Uma boa conversa começa por aqui.</p></div></div>
+          <button class="secondary device-activate" id="activateDevicesBtn" onclick="activateDevices()">Ativar microfone</button>
+          <p class="hint device-hint" id="deviceStatusHint">Permita o acesso para escolher e testar seu microfone.</p>
+          <div class="field-group"><label for="micSelect">Microfone</label><select id="micSelect" onchange="onMicChange()"><option value="">Padrão do sistema</option></select><div class="meter" role="meter" aria-label="Nível do microfone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="meter-fill" id="micMeterFill"></div></div><span class="hint">Fale para testar o nível de entrada.</span></div>
+          <div class="field-group range-group"><div class="label-row"><label for="inputVolume">Volume de entrada</label><output id="inputVolumeValue" for="inputVolume">100%</output></div><input id="inputVolume" type="range" min="0" max="200" value="100" oninput="onInputVolumeChange(); updateRange(this)"><div class="range-scale"><span>0%</span><span>200%</span></div></div>
+          <div class="field-group"><div class="label-row"><label for="speakerSelect">Saída de áudio</label><button class="text-button" onclick="testSpeaker()"><svg class="icon"><use href="#i-volume"/></svg>Testar</button></div><select id="speakerSelect" onchange="onSpeakerChange()"><option value="">Padrão do sistema</option></select><p class="hint" id="speakerHint">Escolha onde ouvir sua chamada.</p></div>
+          <div class="field-group range-group"><div class="label-row"><label for="outputVolume">Volume de saída</label><output id="outputVolumeValue" for="outputVolume">100%</output></div><input id="outputVolume" type="range" min="0" max="100" value="100" oninput="onOutputVolumeChange(); updateRange(this)"><div class="range-scale"><span>0%</span><span>100%</span></div></div>
+        </section>
+        <section class="settings-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-screen"/></svg></span><div><h2>Sua transmissão</h2><p>Compartilhe o que está acontecendo.</p></div></div>
+          <div class="screen-preview" aria-hidden="true"><div class="preview-window"><span></span><span></span><span></span><svg class="icon"><use href="#i-screen"/></svg></div><span>UM OUTRO PONTO DE VISTA.</span></div>
+          <div class="field-group"><label for="screenQualitySelect">Qualidade da tela</label><select id="screenQualitySelect" onchange="onScreenQualityChange()"><option value="fhd60">Full HD · 60 fps</option><option value="fhd30">Full HD · 30 fps</option><option value="hd60">HD · 60 fps</option><option value="hd30">HD · 30 fps</option><option value="sd30">Essencial · 30 fps</option></select><p class="hint">Uma qualidade menor ajuda em conexões mais lentas.</p></div>
+          <label class="check-row" for="systemAudioCheck"><span><b>Incluir áudio na transmissão</b><span>Ao compartilhar uma aba, o som vai junto.</span></span><input type="checkbox" id="systemAudioCheck" checked onchange="onSystemAudioCheckChange()"><span class="switch" aria-hidden="true"></span></label>
+          <p class="hint screen-note" id="screenSupportHint">Para evitar eco, o áudio é desativado ao transmitir uma janela ou a tela inteira.</p>
+        </section>
+      </div>
+      <div id="settings-appearance" class="settings-content" role="tabpanel" aria-labelledby="tab-appearance" hidden>
+        <section class="settings-panel appearance-panel"><div class="panel-heading"><span class="panel-icon"><svg class="icon"><use href="#i-home"/></svg></span><div><h2>O cenário da conversa</h2><p>Escolha o plano de fundo do seu espaço.</p></div></div><div class="bg-grid" id="bgGrid" aria-label="Planos de fundo"></div><p class="hint">Sua escolha fica salva neste navegador.</p></section>
+        <section class="settings-panel profile-promo"><div class="promo-avatar" id="settingsAvatar" aria-hidden="true"></div><span class="eyebrow">SUA PRESENÇA, SEU JEITO</span><h2>Um pouco mais você.</h2><p>Ajuste seu nome e escolha<br>o acabamento do seu perfil.</p><button class="secondary" onclick="openProfile()">Personalizar perfil<svg class="icon"><use href="#i-diagonal"/></svg></button></section>
+      </div>
+    </section>
+
+    <footer class="app-footer"><span>FEITO PARA ESTAR JUNTO.</span><span class="footer-right">Dê espaço à conversa.<span class="footer-symbol" aria-hidden="true">↗</span></span></footer>
   </main>
 </div>
 
-<div class="ring-overlay" id="ringOverlay">
-  <div class="card ring-card">
-    <span class="eyebrow">Chamada recebida</span>
-    <div class="ring-avatar-wrap">
-      <span class="ping"></span><span class="ping d2"></span>
-      <div class="avatar-circle">📞</div>
-    </div>
-    <h1>Alguém está te chamando</h1>
-    <p>Alguém quer te chamar pra uma sala no Callzin.</p>
-    <div class="actions">
-      <button id="acceptBtn" onclick="acceptIncoming()">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 8.5c0-1.5 1-3 2.5-3.5h1.2c.5 0 1 .3 1.2.8l1 2.2c.2.5.1 1-.2 1.4l-1 1.1c-.3.4-.4.9-.1 1.3 1 1.6 2.4 3 4 4 .4.3.9.2 1.3-.1l1.1-1c.4-.3.9-.4 1.4-.2l2.2 1c.5.2.8.7.8 1.2v1.2c-.5 1.5-2 2.5-3.5 2.5-6.6 0-13-6.4-13-13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        Aceitar
-      </button>
-      <button id="declineBtn" onclick="declineIncoming()">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.6 10.8C7.4 15.6 16.6 15.6 20.4 10.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" transform="rotate(180 12 12)"/><path d="M2 9.5c2.2-2 5-3 10-3s7.8 1 10 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9.5 12l5 5M14.5 12l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Recusar
-      </button>
-    </div>
-  </div>
-</div>
+<div id="status" class="status-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
+<dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileTitle">
+  <form id="profileForm" onsubmit="event.preventDefault(); saveProfileDialog()">
+    <div class="dialog-topline"><span class="eyebrow">IDENTIDADE / 001</span><button type="button" class="icon-button" onclick="closeProfile()" aria-label="Fechar perfil"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div class="profile-display"><span class="profile-orbit" aria-hidden="true"></span><span id="profilePreview" aria-hidden="true"></span><span class="profile-serial">PERSONAL SPACE ©</span></div>
+    <h2 id="profileTitle">Prazer, você.</h2><p class="dialog-description">Seu jeito de chegar na conversa.</p>
+    <label for="profileName">Como podemos chamar você?</label><input id="profileName" type="text" maxlength="18" autocomplete="nickname" placeholder="Seu nome" required>
+    <fieldset class="avatar-fieldset"><legend>Escolha seu acabamento</legend><div id="avatarOptions" class="avatar-options"></div></fieldset>
+    <div class="dialog-actions"><button type="button" class="secondary" onclick="closeProfile()">Cancelar</button><button type="submit" class="primary">Salvar perfil<svg class="icon"><use href="#i-arrow"/></svg></button></div>
+    <p class="dialog-footnote">Esse perfil fica salvo no seu navegador.</p>
+  </form>
+</dialog>
 
-<script src="script.js"></script>
+<dialog class="ring-overlay" id="ringOverlay" aria-labelledby="ringTitle">
+  <div class="ring-card"><span class="eyebrow">TEM GENTE CHEGANDO</span><div class="ring-avatar-wrap"><span class="ping"></span><span class="ping d2"></span><div class="avatar-circle"><svg class="icon"><use href="#i-phone"/></svg></div></div><h2 id="ringTitle">Bora conversar?</h2><p>Você recebeu um convite para uma chamada.</p><div class="actions"><button class="secondary" id="declineBtn" onclick="declineIncoming()">Agora não</button><button class="primary" id="acceptBtn" onclick="acceptIncoming()"><svg class="icon"><use href="#i-phone"/></svg>Atender</button></div></div>
+</dialog>
+<noscript><div class="noscript-message">Ative o JavaScript no navegador para entrar em uma sala.</div></noscript>
 </body>
 </html>
